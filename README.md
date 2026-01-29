@@ -534,11 +534,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📧 Contact
 
-For support or queries, reach out to:
-- Email: support@zomato.com
-- GitHub Issues: [Create an issue](https://github.com/yourusername/zomato-backend/issues)
 
 ## 🙏 Acknowledgments
 
