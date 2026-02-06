@@ -22,7 +22,7 @@ const { sequelize } = require("./config/mysql");
 const connectMongoDB = require("./config/mongo");
 const { connectMySQL } = require("./config/mysql");
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5001;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 let server;
@@ -39,11 +39,17 @@ const startServer = async () => {
     // Create server
     server = http.createServer(app);
 
+    // Initialize Socket.IO for real-time tracking
+    const { initializeSocket } = require("./config/socket");
+    initializeSocket(server);
+    console.log(" Socket.IO initialized");
+
     // Start server
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${NODE_ENV}`);
-      console.log("MongoDB + MySQL connected");
+      console.log(` Server running on port ${PORT}`);
+      console.log(` Environment: ${NODE_ENV}`);
+      console.log(" MongoDB + MySQL connected");
+      console.log(" Real-time tracking enabled");
     });
 
     // ======================

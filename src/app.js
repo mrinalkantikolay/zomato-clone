@@ -1,120 +1,131 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-
-const app = express();
-
 const rateLimit = require("express-rate-limit");
-
 const helmet = require("helmet");
+const xss = require("xss-clean");
 
 const errorHandler = require("./middlewares/error.middleware");
 
-//Global Middleware
+const app = express();
+
+/* =========================
+   GLOBAL MIDDLEWARE
+========================= */
 
 // CORS Configuration
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
+
+// Body Parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-//Logging
+// 🔐 XSS Protection (ADDED)
+app.use(xss());
 
+// Logging
 app.use(morgan("dev"));
 
-
-//Rate Limiter
-
+// Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per IP
 });
-
 app.use(limiter);
 
-/**
- * Security Headers
- */
+// Security Headers
 app.use(helmet());
 
-// Swagger API Documentation
+/* =========================
+   API DOCUMENTATION
+========================= */
+
 const { swaggerUi, swaggerDocs } = require("./config/swagger");
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "Zomato API Documentation"
-}));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocs, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "Zomato API Documentation",
+  })
+);
 
-//Auth Routes
+/* =========================
+   API ROUTES (VERSIONED)
+========================= */
 
+// Auth Routes
 const authRoutes = require("./routes/auth.routes");
+app.use("/api/v1/auth", authRoutes);
 
-app.use("/api/auth", authRoutes);
-
-//Restaurant Routes
-
+// Restaurant Routes
 const restaurantRoutes = require("./routes/restaurant.routes");
+app.use("/api/v1/restaurants", restaurantRoutes);
 
-app.use("/api/restaurants", restaurantRoutes);
-
-//Menu Routes
-
+// Menu Routes
 const menuRoutes = require("./routes/menu.routes");
+app.use("/api/v1/menu", menuRoutes);
 
-app.use("/api/menu", menuRoutes);
-
-//Cart Routes
-
+// Cart Routes
 const cartRoutes = require("./routes/cart.routes");
-
-app.use("/api/cart", cartRoutes);
+app.use("/api/v1/cart", cartRoutes);
 
 // Order Routes
-
 const orderRoutes = require("./routes/order.routes");
+app.use("/api/v1/orders", orderRoutes);
 
-app.use("/api/orders", orderRoutes);
+// Order Tracking Routes
+const orderTrackingRoutes = require("./routes/orderTracking.routes");
+app.use("/api/v1/orders", orderTrackingRoutes);
 
-//Payment Routes
-
+// Payment Routes
 const paymentRoutes = require("./routes/payment.routes");
+app.use("/api/v1/payments", paymentRoutes);
 
-app.use("/api/payments", paymentRoutes);
-
-//Admin Routes
-
+// Admin Routes
 const adminRoutes = require("./routes/admin.routes");
+app.use("/api/v1/admin", adminRoutes);
 
+// Upload Routes
+const uploadRoutes = require("./routes/upload.routes");
+app.use("/api/v1/upload", uploadRoutes);
 
-app.use("/api/admin", adminRoutes);
+// Delivery Partner Routes (Simulation)
+const deliveryPartnerRoutes = require("./routes/deliveryPartner.routes");
+app.use("/api/v1/delivery-partners", deliveryPartnerRoutes);
 
+/* =========================
+   HEALTH CHECK
+========================= */
 
-
-
-
-//Health Check
-
-app.get("/api/health", (req, res) => {
+app.get("/api/v1/health", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Backend server is healthy",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-//Api Routes PlaceHolder
+/* =========================
+   404 HANDLER
+========================= */
 
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "API route not found"
+    message: "API route not found",
   });
 });
 
+/* =========================
+   GLOBAL ERROR HANDLER
+========================= */
 
 app.use(errorHandler);
 

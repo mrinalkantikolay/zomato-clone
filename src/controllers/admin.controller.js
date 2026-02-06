@@ -62,9 +62,56 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * GET ACTIVE ORDERS FOR LIVE TRACKING
+ * ------------------------------------
+ * Returns all orders currently being delivered with live locations
+ */
+const getActiveOrdersForTracking = asyncHandler(async (req, res) => {
+  const orders = await adminService.getActiveOrdersForTracking();
+
+  res.status(200).json({
+    success: true,
+    count: orders.length,
+    data: orders,
+  });
+});
+
+/**
+ * GET ALL DELIVERY PARTNER LOCATIONS
+ * -----------------------------------
+ * Returns current locations of all delivery partners for map view
+ */
+const getAllDeliveryPartnerLocations = asyncHandler(async (req, res) => {
+  const locations = await adminService.getAllDeliveryPartnerLocations();
+
+  res.status(200).json({
+    success: true,
+    count: locations.length,
+    data: locations,
+  });
+});
+
+/**
+ * GET LIVE TRACKING STATISTICS
+ * -----------------------------
+ * Real-time stats for admin dashboard
+ */
+const getLiveTrackingStats = asyncHandler(async (req, res) => {
+  const stats = await adminService.getLiveTrackingStats();
+
+  res.status(200).json({
+    success: true,
+    data: stats,
+  });
+});
+
 module.exports = {
   getAllOrders,
   updateOrderStatus,
   getAllPayments,
   getDashboardStats,
+  getActiveOrdersForTracking,
+  getAllDeliveryPartnerLocations,
+  getLiveTrackingStats,
 };

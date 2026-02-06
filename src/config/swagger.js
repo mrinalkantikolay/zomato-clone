@@ -114,6 +114,56 @@ const swaggerOptions = {
             createdAt: { type: 'string', format: 'date-time' }
           }
         },
+        DeliveryPartner: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            name: { type: 'string', example: 'Rahul Sharma' },
+            phone: { type: 'string', example: '9876543210' },
+            email: { type: 'string', example: 'rahul@delivery.com' },
+            vehicleType: { type: 'string', enum: ['bike', 'scooter', 'bicycle', 'car'], example: 'bike' },
+            vehicleNumber: { type: 'string', example: 'DL01AB1234' },
+            currentLocation: {
+              type: 'object',
+              properties: {
+                latitude: { type: 'number', example: 28.6139 },
+                longitude: { type: 'number', example: 77.2090 },
+                updatedAt: { type: 'string', format: 'date-time' }
+              }
+            },
+            isAvailable: { type: 'boolean', example: true },
+            rating: { type: 'number', example: 4.5 },
+            totalDeliveries: { type: 'integer', example: 150 }
+          }
+        },
+        OrderTracking: {
+          type: 'object',
+          properties: {
+            orderId: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            status: { type: 'string', example: 'out_for_delivery' },
+            deliveryPartner: { $ref: '#/components/schemas/DeliveryPartner' },
+            deliveryLocation: {
+              type: 'object',
+              properties: {
+                latitude: { type: 'number', example: 28.6139 },
+                longitude: { type: 'number', example: 77.2090 },
+                timestamp: { type: 'string', format: 'date-time' }
+              }
+            },
+            estimatedDeliveryTime: { type: 'string', format: 'date-time' },
+            statusHistory: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  status: { type: 'string' },
+                  timestamp: { type: 'string', format: 'date-time' },
+                  updatedBy: { type: 'string' }
+                }
+              }
+            }
+          }
+        },
         Error: {
           type: 'object',
           properties: {
@@ -139,8 +189,11 @@ const swaggerOptions = {
       { name: 'Menu', description: 'Menu item operations' },
       { name: 'Cart', description: 'Shopping cart operations' },
       { name: 'Orders', description: 'Order management' },
+      { name: 'Order Tracking', description: 'Real-time order tracking and delivery updates' },
+      { name: 'Delivery Partners', description: 'Delivery partner management and simulation' },
       { name: 'Payments', description: 'Payment processing' },
-      { name: 'Admin', description: 'Admin-only endpoints' }
+      { name: 'Admin', description: 'Admin-only endpoints' },
+      { name: 'Admin Tracking', description: 'Admin live tracking dashboard' }
     ]
   },
   apis: ['./src/routes/*.js'] // Path to API routes
