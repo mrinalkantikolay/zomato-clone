@@ -14,6 +14,12 @@ const redisClient = require("../config/redis");
  */
 const cacheDeliveryLocation = async (orderId, locationData) => {
   try {
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      console.warn("Redis not connected, skipping location cache");
+      return false;
+    }
+
     const key = `delivery:location:${orderId}`;
     const data = JSON.stringify({
       latitude: locationData.latitude,
@@ -40,6 +46,11 @@ const cacheDeliveryLocation = async (orderId, locationData) => {
  */
 const getCachedDeliveryLocation = async (orderId) => {
   try {
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return null;
+    }
+
     const key = `delivery:location:${orderId}`;
     const data = await redisClient.get(key);
 
@@ -61,6 +72,11 @@ const getCachedDeliveryLocation = async (orderId) => {
  */
 const deleteCachedLocation = async (orderId) => {
   try {
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return false;
+    }
+
     const key = `delivery:location:${orderId}`;
     await redisClient.del(key);
     console.log(`🗑️ Deleted location cache for order ${orderId}`);
@@ -78,7 +94,12 @@ const deleteCachedLocation = async (orderId) => {
  */
 const cacheDeliveryPartnerStatus = async (deliveryPartnerId, status) => {
   try {
-    const key = `delivery:partner:${deliveryPartnerId}`;
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return false;
+    }
+
+    const key = `delivery: partner:${deliveryPartnerId} `;
     const data = JSON.stringify({
       isActive: status.isActive,
       currentOrderId: status.currentOrderId || null,
@@ -101,7 +122,12 @@ const cacheDeliveryPartnerStatus = async (deliveryPartnerId, status) => {
  */
 const getDeliveryPartnerStatus = async (deliveryPartnerId) => {
   try {
-    const key = `delivery:partner:${deliveryPartnerId}`;
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return null;
+    }
+
+    const key = `delivery: partner:${deliveryPartnerId} `;
     const data = await redisClient.get(key);
 
     if (!data) {
@@ -122,7 +148,12 @@ const getDeliveryPartnerStatus = async (deliveryPartnerId) => {
  */
 const cacheActiveOrder = async (orderId, orderData) => {
   try {
-    const key = `active:orders`;
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return false;
+    }
+
+    const key = `active: orders`;
     const score = Date.now(); // Use timestamp as score for sorting
 
     // Add to sorted set
@@ -149,7 +180,12 @@ const cacheActiveOrder = async (orderId, orderData) => {
  */
 const removeActiveOrder = async (orderId) => {
   try {
-    const key = `active:orders`;
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return false;
+    }
+
+    const key = `active: orders`;
     const members = await redisClient.zRange(key, 0, -1);
 
     for (const member of members) {
@@ -174,7 +210,12 @@ const removeActiveOrder = async (orderId) => {
  */
 const getAllActiveOrders = async () => {
   try {
-    const key = `active:orders`;
+    // Skip if Redis is not connected
+    if (!redisClient.isOpen) {
+      return [];
+    }
+
+    const key = `active: orders`;
     const members = await redisClient.zRange(key, 0, -1);
 
     return members.map(member => JSON.parse(member));

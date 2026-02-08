@@ -363,7 +363,7 @@ const simulateLocationUpdates = asyncHandler(async (req, res) => {
 
     if (elapsed > duration) {
       clearInterval(interval);
-      console.log(`✅ Location simulation completed for order ${orderId}`);
+      console.log(` Location simulation completed for order ${orderId}`);
       return;
     }
 
@@ -408,7 +408,7 @@ const simulateLocationUpdates = asyncHandler(async (req, res) => {
         timestamp: new Date(),
       });
 
-      console.log(`📍 Location updated: ${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
+      console.log(` Location updated: ${newLat.toFixed(6)}, ${newLng.toFixed(6)}`);
     } catch (error) {
       console.error("Socket emit error:", error);
     }

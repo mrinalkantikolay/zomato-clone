@@ -2,7 +2,7 @@
 // HANDLE SYNC ERRORS FIRST
 // ======================
 process.on("uncaughtException", (err) => {
-  console.error("UNCAUGHT EXCEPTION 💥", err);
+  console.error("UNCAUGHT EXCEPTION ", err);
   process.exit(1);
 });
 
@@ -22,7 +22,7 @@ const { sequelize } = require("./config/mysql");
 const connectMongoDB = require("./config/mongo");
 const { connectMySQL } = require("./config/mysql");
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4005;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 let server;
@@ -56,7 +56,7 @@ const startServer = async () => {
     // HANDLE ASYNC ERRORS
     // ======================
     process.on("unhandledRejection", (err) => {
-      console.error("UNHANDLED REJECTION 💥", err);
+      console.error("UNHANDLED REJECTION ", err);
       server.close(() => process.exit(1));
     });
 

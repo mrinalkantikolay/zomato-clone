@@ -27,11 +27,11 @@ const cache = (duration = 300) => {
       // 1️⃣ Check Redis
       const cachedData = await redisClient.get(cacheKey);
       if (cachedData) {
-        console.log("✅ Cache HIT:", cacheKey);
+        console.log(" Cache HIT:", cacheKey);
         return res.status(200).json(JSON.parse(cachedData));
       }
 
-      console.log("❌ Cache MISS:", cacheKey);
+      console.log(" Cache MISS:", cacheKey);
 
       // 2️⃣ Override res.json to store response in Redis
       const originalJson = res.json.bind(res);

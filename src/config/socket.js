@@ -16,7 +16,7 @@ const initializeSocket = (server) => {
   io.use(socketAuthMiddleware);
 
   io.on("connection", (socket) => {
-    console.log(`✅ Client connected: ${socket.id} (Role: ${socket.role})`);
+    console.log(` Client connected: ${socket.id} (Role: ${socket.role})`);
 
     // Join room for specific order tracking (with authorization check)
     socket.on("join:order", async (orderId) => {
@@ -28,12 +28,12 @@ const initializeSocket = (server) => {
           message: `Cannot join order room: ${reason}`,
           orderId,
         });
-        console.log(`❌ ${socket.role} ${socket.id} denied access to order ${orderId}: ${reason}`);
+        console.log(` ${socket.role} ${socket.id} denied access to order ${orderId}: ${reason}`);
         return;
       }
 
       socket.join(`order:${orderId}`);
-      console.log(`✅ ${socket.role} ${socket.id} joined order room: ${orderId}`);
+      console.log(` ${socket.role} ${socket.id} joined order room: ${orderId}`);
 
       // Send confirmation
       socket.emit("joined:order", {
@@ -45,7 +45,7 @@ const initializeSocket = (server) => {
     // Leave order room
     socket.on("leave:order", (orderId) => {
       socket.leave(`order:${orderId}`);
-      console.log(`👋 ${socket.role} ${socket.id} left order room: ${orderId}`);
+      console.log(` ${socket.role} ${socket.id} left order room: ${orderId}`);
     });
 
     // Delivery partner joins their active orders
@@ -67,7 +67,7 @@ const initializeSocket = (server) => {
       }
 
       socket.join(`delivery:${deliveryPartnerId}`);
-      console.log(`🛵 Delivery partner ${socket.deliveryPartnerName} joined their room`);
+      console.log(` Delivery partner ${socket.deliveryPartnerName} joined their room`);
     });
 
     // Handle location updates from delivery partners
@@ -92,11 +92,11 @@ const initializeSocket = (server) => {
         },
       });
 
-      console.log(`📍 Location update from ${socket.deliveryPartnerName}: ${latitude}, ${longitude}`);
+      console.log(` Location update from ${socket.deliveryPartnerName}: ${latitude}, ${longitude}`);
     });
 
     socket.on("disconnect", () => {
-      console.log(`❌ Client disconnected: ${socket.id} (${socket.role})`);
+      console.log(` Client disconnected: ${socket.id} (${socket.role})`);
     });
   });
 

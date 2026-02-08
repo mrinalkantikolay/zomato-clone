@@ -43,7 +43,7 @@ const socketAuthMiddleware = async (socket, next) => {
       socket.deliveryPartnerId = deliveryPartner._id;
       socket.deliveryPartnerName = deliveryPartner.name;
 
-      console.log(`🛵 Delivery partner connected: ${deliveryPartner.name} (${socket.id})`);
+      console.log(` Delivery partner connected: ${deliveryPartner.name} (${socket.id})`);
     } else if (role === "user" || role === "customer") {
       // Verify user exists
       const user = await User.findById(socket.userId);
@@ -55,9 +55,22 @@ const socketAuthMiddleware = async (socket, next) => {
       socket.userName = user.name;
 
       console.log(`👤 User connected: ${user.name} (${socket.id})`);
-    } else if (role === "admin" || role === "restaurant") {
-      // Admin/Restaurant access
-      console.log(`🔑 ${role} connected: (${socket.id})`);
+    } else if (role === "admin") {
+      // Admin access - verify user exists and is admin
+      const user = await User.findById(socket.userId);
+      if (!user || user.role !== "admin") {
+        return next(new Error("Admin not found or unauthorized"));
+      }
+      console.log(` Admin connected: ${user.name} (${socket.id})`);
+    } else if (role === "restaurant") {
+      // Restaurant access - set restaurantId for order validation
+      // Note: restaurantId should be passed in handshake or stored in user profile
+      const restaurantId = socket.handshake.auth.restaurantId || socket.handshake.query.restaurantId;
+      if (!restaurantId) {
+        return next(new Error("Restaurant ID required for restaurant role"));
+      }
+      socket.restaurantId = parseInt(restaurantId, 10);
+      console.log(` Restaurant connected: ID ${restaurantId} (${socket.id})`);
     } else {
       return next(new Error("Invalid role"));
     }

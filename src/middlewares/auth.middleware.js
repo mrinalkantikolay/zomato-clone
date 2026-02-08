@@ -20,13 +20,22 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id).select("-password");
+
+    // Check if user exists (might have been deleted after token was issued)
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found or has been deleted",
+      });
+    }
+
+    req.user = user;
     next();
-  }
-  catch (error) {
+  } catch (error) {
     res.status(401).json({
       success: false,
-      message: "Invalid token"
+      message: "Invalid token",
     });
   }
 };

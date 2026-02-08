@@ -4,8 +4,7 @@ const router = express.Router();
 
 const protect = require("../middlewares/auth.middleware");
 
-const orderController = require("../controllers/order.cotroller");
-
+const orderController = require("../controllers/order.controller");
 
 router.post("/", protect, orderController.placeOrder);
 
