@@ -195,6 +195,9 @@ mysql-data/
 build/
 dist/
 
+#docs
+REFRESH_TOKEN_ROTATION.md
+
 # Documentation (if auto-generated)
 docs/api/
 

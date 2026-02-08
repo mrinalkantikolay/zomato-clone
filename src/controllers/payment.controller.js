@@ -1,15 +1,27 @@
 const paymentService = require("../services/payment.service");
 const PaymentDTO = require("../dtos/payment.dto");
 const asyncHandler = require("../utils/asyncHandler");
+const AuditLogger = require("../utils/auditLogger");
 
 /**
  * CREATE DUMMY RAZORPAY PAYMENT ORDER
  * ----------------------------------
  */
 const createPayment = asyncHandler(async (req, res) => {
+  const { orderId } = req.body;
+
   const payment = await paymentService.createRazorpayOrder(
     req.user._id,
-    req.body.orderId // 🔧 fixed: orderid → orderId
+    orderId
+  );
+
+  // Audit log: Payment creation
+  await AuditLogger.log(
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.PAYMENT_CREATE, {
+      resourceType: "payment",
+      resourceId: payment._id.toString(),
+      metadata: { orderId, amount: payment.amount },
+    })
   );
 
   res.status(201).json({
@@ -25,6 +37,19 @@ const createPayment = asyncHandler(async (req, res) => {
  */
 const verifyPayment = asyncHandler(async (req, res) => {
   const payment = await paymentService.verifyRazorpayPayment(req.body);
+
+  // Audit log: Payment verification
+  await AuditLogger.log(
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.PAYMENT_VERIFY, {
+      resourceType: "payment",
+      resourceId: payment._id.toString(),
+      metadata: {
+        orderId: payment.orderId,
+        amount: payment.amount,
+        status: payment.status,
+      },
+    })
+  );
 
   res.status(200).json({
     success: true,

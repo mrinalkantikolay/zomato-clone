@@ -2,6 +2,7 @@ const adminService = require("../services/admin.service");
 const OrderDTO = require("../dtos/order.dto");
 const PaymentDTO = require("../dtos/payment.dto");
 const asyncHandler = require("../utils/asyncHandler");
+const AuditLogger = require("../utils/auditLogger");
 
 /**
  * GET ALL ORDERS (ADMIN) WITH PAGINATION
@@ -22,9 +23,25 @@ const getAllOrders = asyncHandler(async (req, res) => {
  * UPDATE ORDER STATUS (ADMIN)
  */
 const updateOrderStatus = asyncHandler(async (req, res) => {
-  const order = await adminService.updateOrderStatus(
-    req.params.orderId,
-    req.body.status
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  // Get old status for audit trail
+  const oldOrder = await adminService.getOrderById(orderId);
+  const oldStatus = oldOrder?.status;
+
+  const order = await adminService.updateOrderStatus(orderId, status);
+
+  // Audit log: Order status update
+  await AuditLogger.log(
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.ORDER_STATUS_UPDATE, {
+      resourceType: "order",
+      resourceId: orderId,
+      metadata: {
+        oldStatus,
+        newStatus: status,
+      },
+    })
   );
 
   res.status(200).json({

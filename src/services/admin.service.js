@@ -28,6 +28,15 @@ const getAllOrders = async (page = 1, limit = 10) => {
 };
 
 /**
+ * GET ORDER BY ID (HELPER)
+ * Used for audit logging to get old status before update
+ */
+const getOrderById = async (orderId) => {
+  const order = await Order.findById(orderId);
+  return order;
+};
+
+/**
  * UPDATE ORDER STATUS (ADMIN)
  * Updates status of a single order
  */
@@ -194,6 +203,7 @@ const getLiveTrackingStats = async () => {
 
 module.exports = {
   getAllOrders,
+  getOrderById,
   updateOrderStatus,
   getAllPayments,
   getDashboardStats,

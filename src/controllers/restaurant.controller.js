@@ -2,6 +2,7 @@ const restaurantService = require("../services/restaurant.service");
 const { clearRestaurantCache } = require("../middlewares/cache.middleware");
 const RestaurantDTO = require("../dtos/restaurant.dto");
 const asyncHandler = require("../utils/asyncHandler");
+const AuditLogger = require("../utils/auditLogger");
 
 /**
  * CREATE RESTAURANT (ADMIN)
@@ -11,6 +12,15 @@ const createRestaurant = asyncHandler(async (req, res) => {
 
   // Clear restaurant cache after creating new restaurant
   await clearRestaurantCache();
+
+  // Audit log: Restaurant creation
+  await AuditLogger.log(
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.RESTAURANT_CREATE, {
+      resourceType: "restaurant",
+      resourceId: restaurant.id.toString(),
+      metadata: { restaurantName: restaurant.name },
+    })
+  );
 
   res.status(201).json({
     success: true,
@@ -54,13 +64,21 @@ const getRestaurantById = asyncHandler(async (req, res) => {
  * UPDATE RESTAURANT (ADMIN)
  */
 const updateRestaurant = asyncHandler(async (req, res) => {
-  const restaurant = await restaurantService.updateRestaurant(
-    req.params.id,
-    req.body
-  );
+  const { id } = req.params;
+
+  const restaurant = await restaurantService.updateRestaurant(id, req.body);
 
   // Clear restaurant cache after update
   await clearRestaurantCache();
+
+  // Audit log: Restaurant update
+  await AuditLogger.log(
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.RESTAURANT_UPDATE, {
+      resourceType: "restaurant",
+      resourceId: id,
+      metadata: { updatedFields: Object.keys(req.body) },
+    })
+  );
 
   res.status(200).json({
     success: true,
@@ -73,10 +91,20 @@ const updateRestaurant = asyncHandler(async (req, res) => {
  * DELETE RESTAURANT (ADMIN)
  */
 const deleteRestaurant = asyncHandler(async (req, res) => {
-  await restaurantService.deleteRestaurant(req.params.id);
+  const { id } = req.params;
+
+  await restaurantService.deleteRestaurant(id);
 
   // Clear restaurant cache after delete
   await clearRestaurantCache();
+
+  // Audit log: Restaurant deletion
+  await AuditLogger.log(
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.RESTAURANT_DELETE, {
+      resourceType: "restaurant",
+      resourceId: id,
+    })
+  );
 
   res.status(200).json({
     success: true,

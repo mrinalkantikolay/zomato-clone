@@ -1,34 +1,58 @@
-# Auto-generated Node dependency list (package@version) from backend/package.json
+# Zomato Backend - Node.js Dependencies
 
-# Dependencies
-bcryptjs@^3.0.3
-cloudinary@^2.9.0
-cors@^2.8.5
-dotenv@^17.2.4
-express@^5.2.1
-express-rate-limit@^8.2.1
-express-validator@^7.3.1
-helmet@^8.1.0
-init@^0.1.2
-jsonwebtoken@^9.0.3
-mongoose@^9.1.3
-morgan@^1.10.1
-multer@^2.0.2
-mysql2@^3.16.0
-redis@^5.10.0
-sequelize@^6.37.7
-socket.io@^4.8.3
-swagger-jsdoc@^6.2.8
-swagger-ui-express@^5.0.1
-uuid@^13.0.0
-xss-clean@^0.1.4
+## Core Framework
+express@^5.2.1                    # Web framework
+dotenv@^17.2.4                    # Environment variables
 
-# Dev dependencies
-nodemon@^3.1.11
+## Database
+mongoose@^9.1.3                   # MongoDB ODM
+mysql2@^3.16.0                    # MySQL client
+sequelize@^6.37.7                 # SQL ORM
 
-# Notes:
-- Built-in Node modules found in source: `crypto`, `http` (no install needed).
-- Packages present in package.json but not referenced in source scan: `init`, `uuid` (verify if needed).
-- To install using npm run:
-  npm install <package>@<version>  OR  npm install
-  (This file is informational — use package.json for npm tooling.)
+## Authentication & Security
+jsonwebtoken@^9.0.3               # JWT token generation/verification
+bcryptjs@^3.0.3                   # Password hashing
+cookie-parser@^1.4.7              # Parse HTTP cookies (for refresh tokens)
+helmet@^8.1.0                     # Security headers
+cors@^2.8.5                       # Cross-Origin Resource Sharing
+xss-clean@^0.1.4                  # XSS protection middleware
+express-rate-limit@^8.2.1         # Rate limiting
+
+## Validation
+express-validator@^7.3.1          # Request validation
+
+## Caching & Real-time
+redis@^5.10.0                     # Redis client (caching + token revocation)
+socket.io@^4.8.3                  # WebSocket for real-time features
+
+## File Upload & Storage
+multer@^2.0.2                     # File upload middleware
+cloudinary@^2.9.0                 # Cloud storage for images/videos
+
+## API Documentation
+swagger-jsdoc@^6.2.8              # Generate Swagger/OpenAPI docs
+swagger-ui-express@^5.0.1         # Swagger UI
+
+## Utilities
+morgan@^1.10.1                    # HTTP request logger
+uuid@^13.0.0                      # UUID generation (for requestId)
+init@^0.1.2                       # Initialization helper
+
+## Development Dependencies
+nodemon@^3.1.11                   # Auto-restart on file changes (devDependency)
+
+## Installation
+# Run: npm install
+
+## Node Version
+# Recommended: Node.js 18.x or higher
+
+## Environment Variables Required
+# See .env.example for full list:
+# - PORT
+# - MONGO_URI
+# - MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
+# - REDIS_URL
+# - JWT_SECRET
+# - CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+# - FRONTEND_URL

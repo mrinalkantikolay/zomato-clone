@@ -4,8 +4,10 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const xss = require("xss-clean");
+const cookieParser = require("cookie-parser");
 
 const errorHandler = require("./middlewares/error.middleware");
+const requestIdMiddleware = require("./middlewares/requestId.middleware");
 
 const app = express();
 
@@ -25,8 +27,12 @@ app.use(cors(corsOptions));
 // Body Parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Parse cookies for refresh token
 
-// 🔐 XSS Protection (ADDED)
+// Request ID (for tracing and audit logs)
+app.use(requestIdMiddleware);
+
+// 🔐 XSS Protection
 app.use(xss());
 
 // Logging
@@ -34,7 +40,7 @@ app.use(morgan("dev"));
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 2 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per IP
 });
 app.use(limiter);
