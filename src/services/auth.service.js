@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
-const redisClient = require("../config/redis");
+const { redisClient } = require("../config/redis");
 
 /**
  * Auth Service
@@ -97,13 +97,20 @@ const revokeRefreshToken = async (userId, tokenId) => {
  */
 const revokeAllRefreshTokens = async (userId) => {
   const pattern = `refresh:${userId}:*`;
-  const keys = await redisClient.keys(pattern);
+  let totalRevoked = 0;
 
-  if (keys.length > 0) {
-    await redisClient.del(keys);
-  }
+  // Use SCAN instead of KEYS (non-blocking, production-safe)
+  let cursor = 0;
+  do {
+    const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
+    cursor = result.cursor;
+    if (result.keys.length > 0) {
+      await redisClient.del(result.keys);
+      totalRevoked += result.keys.length;
+    }
+  } while (cursor !== 0);
 
-  return keys.length; // Return number of tokens revoked
+  return totalRevoked; // Return number of tokens revoked
 };
 
 // ============================================================================
@@ -191,13 +198,13 @@ const login = async ({ email, password }, deviceInfo = null) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new ApiError(404, "User not found");
+    throw new ApiError(401, "Invalid email or password");
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    throw new ApiError(401, "Invalid credentials");
+    throw new ApiError(401, "Invalid email or password");
   }
 
   // Generate both tokens

@@ -26,16 +26,16 @@ const signup = asyncHandler(async (req, res) => {
   res.cookie("refreshToken", result.refreshToken, {
     httpOnly: true, // Prevents XSS attacks
     secure: process.env.NODE_ENV === "production", // HTTPS only in production
-    sameSite: "strict", // CSRF protection
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
   // Audit log: User signup
+  // NOTE: Do NOT spread req — it loses non-enumerable properties (headers, socket)
+  // which causes AuditLogger.getIpAddress to crash with TypeError
+  req.user = result.user;
   await AuditLogger.log(
-    AuditLogger.buildParams(
-      { ...req, user: result.user }, // Attach user to req for buildParams
-      AuditLogger.ACTIONS.USER_SIGNUP
-    )
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.USER_SIGNUP)
   );
 
   // Use DTO to sanitize response
@@ -62,16 +62,14 @@ const login = asyncHandler(async (req, res) => {
   res.cookie("refreshToken", result.refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
   // Audit log: User login
+  req.user = result.user;
   await AuditLogger.log(
-    AuditLogger.buildParams(
-      { ...req, user: result.user },
-      AuditLogger.ACTIONS.USER_LOGIN
-    )
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.USER_LOGIN)
   );
 
   // Use DTO to sanitize response
@@ -104,17 +102,15 @@ const refresh = asyncHandler(async (req, res) => {
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
 
   // Audit log: Token refresh
+  req.user = result.user;
   await AuditLogger.log(
-    AuditLogger.buildParams(
-      { ...req, user: result.user },
-      AuditLogger.ACTIONS.TOKEN_REFRESH
-    )
+    AuditLogger.buildParams(req, AuditLogger.ACTIONS.TOKEN_REFRESH)
   );
 
   res.status(200).json({
@@ -145,7 +141,7 @@ const logout = asyncHandler(async (req, res) => {
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
 
   // Audit log: User logout
@@ -173,7 +169,7 @@ const logoutAll = asyncHandler(async (req, res) => {
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
   });
 
   // Audit log: Logout from all devices
@@ -192,10 +188,32 @@ const logoutAll = asyncHandler(async (req, res) => {
   });
 });
 
+// ============================================================================
+// GET CURRENT USER
+// ============================================================================
+
+const getMe = asyncHandler(async (req, res) => {
+  // req.user is already populated by the protect middleware
+  const user = req.user;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    },
+  });
+});
+
 module.exports = {
   signup,
   login,
   refresh,
   logout,
   logoutAll,
+  getMe,
 };

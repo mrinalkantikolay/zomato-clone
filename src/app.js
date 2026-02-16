@@ -3,7 +3,6 @@ const cors = require("cors");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
-const xss = require("xss-clean");
 const cookieParser = require("cookie-parser");
 
 const errorHandler = require("./middlewares/error.middleware");
@@ -32,18 +31,42 @@ app.use(cookieParser()); // Parse cookies for refresh token
 // Request ID (for tracing and audit logs)
 app.use(requestIdMiddleware);
 
-// 🔐 XSS Protection
-app.use(xss());
-
 // Logging
 app.use(morgan("dev"));
 
-// Rate Limiting
-const limiter = rateLimit({
+// Rate Limiting (Redis store wired after connection in server.js)
+const limiterOptions = {
   windowMs: 2 * 60 * 1000, // 2 minutes
   max: 100, // 100 requests per IP
-});
+  standardHeaders: true,
+  legacyHeaders: false,
+};
+const limiter = rateLimit(limiterOptions);
 app.use(limiter);
+
+/**
+ * Upgrade rate limiter to use Redis store (called from server.js after Redis connects)
+ */
+app.upgradeRateLimiter = () => {
+  try {
+    const { RedisStore } = require("rate-limit-redis");
+    const { redisClient } = require("./config/redis");
+    if (redisClient && redisClient.isOpen) {
+      limiterOptions.store = new RedisStore({
+        sendCommand: (...args) => redisClient.sendCommand(args),
+      });
+      // Replace limiter middleware
+      app._router.stack = app._router.stack.filter(
+        (layer) => layer.handle !== limiter
+      );
+      const newLimiter = rateLimit(limiterOptions);
+      app.use(newLimiter);
+      console.log(" Rate limiter upgraded to Redis store");
+    }
+  } catch (error) {
+    console.warn(" Rate limiter Redis upgrade failed, using in-memory:", error.message);
+  }
+};
 
 // Security Headers
 app.use(helmet());
