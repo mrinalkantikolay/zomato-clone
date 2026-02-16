@@ -8,7 +8,7 @@ const asyncHandler = require("../utils/asyncHandler");
  * Converts cart into order
  */
 const placeOrder = asyncHandler(async (req, res) => {
-  const order = await orderService.placeOrder(req.user._id);
+  const order = await orderService.placeOrder(req.user._id, req.body.address);
 
   res.status(201).json({
     success: true,

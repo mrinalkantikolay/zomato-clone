@@ -31,6 +31,14 @@ const Menu = sequelize.define(
     imageUrl: {
       type: DataTypes.STRING,
     },
+    category: {
+      type: DataTypes.STRING,
+      defaultValue: "Main Course",
+    },
+    isVeg: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
     isAvailable: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

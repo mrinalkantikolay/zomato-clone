@@ -1,4 +1,4 @@
-const redisClient = require("../config/redis");
+const { redisClient } = require("../config/redis");
 
 /**
  * REDIS SERVICE FOR ORDER TRACKING
@@ -99,7 +99,7 @@ const cacheDeliveryPartnerStatus = async (deliveryPartnerId, status) => {
       return false;
     }
 
-    const key = `delivery: partner:${deliveryPartnerId} `;
+    const key = `delivery:partner:${deliveryPartnerId}`;
     const data = JSON.stringify({
       isActive: status.isActive,
       currentOrderId: status.currentOrderId || null,
@@ -127,7 +127,7 @@ const getDeliveryPartnerStatus = async (deliveryPartnerId) => {
       return null;
     }
 
-    const key = `delivery: partner:${deliveryPartnerId} `;
+    const key = `delivery:partner:${deliveryPartnerId}`;
     const data = await redisClient.get(key);
 
     if (!data) {
@@ -153,7 +153,7 @@ const cacheActiveOrder = async (orderId, orderData) => {
       return false;
     }
 
-    const key = `active: orders`;
+    const key = `active:orders`;
     const score = Date.now(); // Use timestamp as score for sorting
 
     // Add to sorted set
@@ -185,7 +185,7 @@ const removeActiveOrder = async (orderId) => {
       return false;
     }
 
-    const key = `active: orders`;
+    const key = `active:orders`;
     const members = await redisClient.zRange(key, 0, -1);
 
     for (const member of members) {
@@ -215,7 +215,7 @@ const getAllActiveOrders = async () => {
       return [];
     }
 
-    const key = `active: orders`;
+    const key = `active:orders`;
     const members = await redisClient.zRange(key, 0, -1);
 
     return members.map(member => JSON.parse(member));

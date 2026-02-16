@@ -1,4 +1,4 @@
-const redisClient = require("../config/redis");
+const { redisClient } = require("../config/redis");
 
 /**
  * CACHE MIDDLEWARE
@@ -66,10 +66,15 @@ const cache = (duration = 300) => {
 const clearCacheByPattern = async (pattern) => {
   if (!redisClient.isOpen) return;
 
-  const keys = await redisClient.keys(pattern);
-  if (keys.length > 0) {
-    await redisClient.del(keys);
-  }
+  // Use SCAN instead of KEYS (non-blocking, production-safe)
+  let cursor = 0;
+  do {
+    const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
+    cursor = result.cursor;
+    if (result.keys.length > 0) {
+      await redisClient.del(result.keys);
+    }
+  } while (cursor !== 0);
 };
 
 /**

@@ -225,3 +225,9 @@ docker-compose.override.yml
 
 # Antigravity AI artifacts (optional - remove if you want to commit)
 .gemini/
+
+# Frontend specific
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/README.md
