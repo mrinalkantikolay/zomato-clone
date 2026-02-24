@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { orderAPI } from '../api/order.api';
 import {
   CheckCircle2,
   MapPin,
@@ -12,6 +13,7 @@ import {
   ArrowRight,
   Star,
   ShoppingBag,
+  Loader2,
 } from 'lucide-react';
 
 /* ─── Dummy Delivery Partner Data ─── */
@@ -24,10 +26,11 @@ const DELIVERY_PARTNERS = [
 
 /* ─── Tracking Steps ─── */
 const TRACKING_STEPS = [
-  { id: 1, label: 'Order Confirmed', icon: Package, time: 'Just now' },
-  { id: 2, label: 'Restaurant Preparing', icon: ChefHat, time: '~5 min' },
-  { id: 3, label: 'Out for Delivery', icon: Bike, time: '~20 min' },
-  { id: 4, label: 'Delivered', icon: Home, time: '~35 min' },
+  { id: 0, status: 'pending',          label: 'Order Placed',          icon: Package },
+  { id: 1, status: 'confirmed',        label: 'Order Confirmed',       icon: CheckCircle2 },
+  { id: 2, status: 'preparing',        label: 'Restaurant Preparing',  icon: ChefHat },
+  { id: 3, status: 'out_for_delivery', label: 'Out for Delivery',      icon: Bike },
+  { id: 4, status: 'delivered',        label: 'Delivered',             icon: Home },
 ];
 
 /* ═══════════════════════════════════════════════
@@ -46,23 +49,45 @@ const OrderConfirmation = () => {
     () => DELIVERY_PARTNERS[Math.floor(Math.random() * DELIVERY_PARTNERS.length)]
   );
 
-  // Animated tracking progress
-  const [activeStep, setActiveStep] = useState(1);
+  // Real order status
+  const [orderStatus, setOrderStatus] = useState('pending');
+  const [statusLabel, setStatusLabel] = useState('Waiting for restaurant...');
+  const intervalRef = useRef(null);
 
+  // Poll real order status every 5s
   useEffect(() => {
-    // Simulate order progress every 8 seconds
-    const interval = setInterval(() => {
-      setActiveStep((prev) => {
-        if (prev >= 4) {
-          clearInterval(interval);
-          return 4;
-        }
-        return prev + 1;
-      });
-    }, 8000);
+    if (!orderId) return;
 
-    return () => clearInterval(interval);
-  }, []);
+    const pollStatus = async () => {
+      try {
+        const { data } = await orderAPI.getOrderById(orderId);
+        const status = data.data?.status || 'pending';
+        setOrderStatus(status);
+
+        if (status === 'pending') setStatusLabel('Waiting for restaurant to confirm...');
+        else if (status === 'confirmed') setStatusLabel('Restaurant confirmed your order!');
+        else if (status === 'preparing') setStatusLabel('Your food is being prepared!');
+        else if (status === 'out_for_delivery') setStatusLabel('Your order is on the way!');
+        else if (status === 'delivered') setStatusLabel('Order delivered! Enjoy your meal!');
+        else if (status === 'cancelled') setStatusLabel('Order was cancelled.');
+
+        // Stop polling when terminal
+        if (status === 'delivered' || status === 'cancelled') {
+          clearInterval(intervalRef.current);
+        }
+      } catch {
+        // Silently ignore polling errors
+      }
+    };
+
+    pollStatus(); // initial
+    intervalRef.current = setInterval(pollStatus, 5000);
+
+    return () => clearInterval(intervalRef.current);
+  }, [orderId]);
+
+  // Active step index derived from real status
+  const activeStep = TRACKING_STEPS.findIndex((s) => s.status === orderStatus);
 
   // Estimated delivery time
   const estimatedMinutes = 35 + Math.floor(Math.random() * 10);
@@ -71,12 +96,24 @@ const OrderConfirmation = () => {
     <main className="container-custom py-10 animate-fade-in">
       {/* ── Success Header ── */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/20 rounded-full mb-6 animate-scale-in">
-          <CheckCircle2 size={44} className="text-green-500" />
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 animate-scale-in" style={{
+          background: orderStatus === 'pending' ? 'rgba(245,158,11,.2)' :
+                      orderStatus === 'cancelled' ? 'rgba(239,68,68,.2)' : 'rgba(34,197,94,.2)',
+        }}>
+          {orderStatus === 'pending' ? (
+            <Loader2 size={44} className="text-yellow-500 animate-spin" />
+          ) : orderStatus === 'cancelled' ? (
+            <span className="text-red-500 text-4xl">✕</span>
+          ) : (
+            <CheckCircle2 size={44} className="text-green-500" />
+          )}
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-3">Order Confirmed! 🎉</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-3">
+          {orderStatus === 'pending' ? 'Order Placed! ⏳' :
+           orderStatus === 'cancelled' ? 'Order Cancelled' : 'Order Confirmed! 🎉'}
+        </h1>
         <p className="text-text-secondary max-w-md mx-auto">
-          Your order has been placed successfully. Sit back and relax while we prepare your meal.
+          {statusLabel}
         </p>
         <p className="text-xs text-text-muted mt-3 font-mono">
           Order ID: {orderId || 'N/A'}
@@ -104,7 +141,7 @@ const OrderConfirmation = () => {
               {/* Active Line */}
               <div
                 className="absolute top-6 left-6 h-1 bg-primary rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${((activeStep - 1) / 3) * (100 - 8)}%` }}
+                style={{ width: `${(Math.max(0, activeStep) / (TRACKING_STEPS.length - 1)) * (100 - 8)}%` }}
               />
 
               {/* Steps */}
@@ -133,7 +170,6 @@ const OrderConfirmation = () => {
                         <p className={`text-xs font-bold ${isActive ? 'text-primary' : 'text-text-muted'}`}>
                           {step.label}
                         </p>
-                        <p className="text-[10px] text-text-muted">{step.time}</p>
                       </div>
                     </div>
                   );
@@ -176,8 +212,8 @@ const OrderConfirmation = () => {
               <div
                 className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-[8000ms] ease-linear flex flex-col items-center"
                 style={{
-                  top: `${25 + ((activeStep - 1) / 3) * 50}%`,
-                  left: `${25 + ((activeStep - 1) / 3) * 50}%`,
+                  top: `${25 + (Math.max(0, activeStep) / (TRACKING_STEPS.length - 1)) * 50}%`,
+                  left: `${25 + (Math.max(0, activeStep) / (TRACKING_STEPS.length - 1)) * 50}%`,
                 }}
               >
                 <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-yellow-500/40 animate-pulse">

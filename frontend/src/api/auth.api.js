@@ -11,4 +11,5 @@ export const authAPI = {
   refresh: () => api.post('/auth/refresh'),
   logout: () => api.post('/auth/logout'),
   logoutAll: () => api.post('/auth/logout-all'),
+  updateProfile: (data) => api.put('/auth/profile', data),
 };

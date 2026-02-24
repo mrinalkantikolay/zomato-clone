@@ -5,6 +5,9 @@ const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
 const { redisClient } = require("../config/redis");
 
+// Maximum concurrent devices per user (oldest session evicted when exceeded)
+const MAX_DEVICES = 5;
+
 /**
  * Auth Service
  * 
@@ -52,11 +55,54 @@ const generateRefreshToken = (userId) => {
 };
 
 /**
+ * Enforce max device limit.
+ * If the user already has MAX_DEVICES active sessions,
+ * evict the oldest one (FIFO) before allowing the new login.
+ */
+const enforceDeviceLimit = async (userId) => {
+  const pattern = `refresh:${userId}:*`;
+  const sessions = [];
+
+  // Collect all active sessions for this user
+  let cursor = 0;
+  do {
+    const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
+    cursor = result.cursor;
+    for (const key of result.keys) {
+      const data = await redisClient.get(key);
+      if (data) {
+        sessions.push({ key, ...JSON.parse(data) });
+      }
+    }
+  } while (cursor !== 0);
+
+  // If at or over the limit, evict the oldest sessions
+  if (sessions.length >= MAX_DEVICES) {
+    // Sort by createdAt ascending (oldest first)
+    sessions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    // Evict enough sessions to make room for 1 new one
+    const toEvict = sessions.length - MAX_DEVICES + 1;
+    for (let i = 0; i < toEvict; i++) {
+      await redisClient.del(sessions[i].key);
+      console.log(`[AUTH] Evicted oldest session for user ${userId}: ${sessions[i].tokenId}`);
+    }
+  }
+
+  return sessions.length;
+};
+
+/**
  * Store refresh token in Redis allowlist
  * Key: refresh:{userId}:{tokenId}
  * TTL: 7 days (auto-expires)
+ *
+ * Enforces MAX_DEVICES limit — evicts oldest session if needed.
  */
 const storeRefreshToken = async (userId, tokenId, deviceInfo = null) => {
+  // Enforce device limit BEFORE storing the new token
+  await enforceDeviceLimit(userId);
+
   const key = `refresh:${userId}:${tokenId}`;
   const value = JSON.stringify({
     userId: userId.toString(),
@@ -338,10 +384,48 @@ const logoutAll = async (userId) => {
   };
 };
 
+/**
+ * Update User Profile
+ * Allows updating name, phone, and avatar
+ */
+const updateProfile = async (userId, updates) => {
+  const allowedFields = ["name", "phone", "avatar"];
+  const sanitized = {};
+
+  for (const field of allowedFields) {
+    if (updates[field] !== undefined) {
+      sanitized[field] = updates[field];
+    }
+  }
+
+  if (Object.keys(sanitized).length === 0) {
+    throw new ApiError(400, "No valid fields to update");
+  }
+
+  const user = await User.findByIdAndUpdate(userId, sanitized, {
+    new: true,
+    runValidators: true,
+  }).select("-password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    avatar: user.avatar,
+    role: user.role,
+  };
+};
+
 module.exports = {
   signup,
   login,
   refreshAccessToken,
   logout,
   logoutAll,
+  updateProfile,
 };

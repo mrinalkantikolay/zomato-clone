@@ -38,7 +38,20 @@ const getUserOrders = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * GET SINGLE ORDER BY ID
+ */
+const getOrderById = asyncHandler(async (req, res) => {
+  const order = await orderService.getOrderById(req.params.id, req.user._id);
+
+  res.status(200).json({
+    success: true,
+    data: OrderDTO.toDTO(order),
+  });
+});
+
 module.exports = {
   placeOrder,
   getUserOrders,
+  getOrderById,
 };

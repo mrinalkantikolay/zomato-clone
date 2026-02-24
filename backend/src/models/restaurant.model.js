@@ -40,6 +40,12 @@ const Restaurant = sequelize.define(
       allowNull: true,
       defaultValue: null,
     },
+
+    ownerId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "MongoDB User._id of the restaurant owner",
+    },
   },
   {
     tableName: "restaurants",
@@ -53,6 +59,10 @@ const Restaurant = sequelize.define(
       {
         name: 'restaurant_isOpen_idx',
         fields: ['isOpen'] // Index on isOpen for filtering
+      },
+      {
+        name: 'restaurant_ownerId_idx',
+        fields: ['ownerId'] // Index on ownerId for owner-scoped queries
       }
     ]
   }

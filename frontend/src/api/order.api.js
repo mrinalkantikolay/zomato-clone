@@ -6,4 +6,7 @@ export const orderAPI = {
 
   getUserOrders: (page = 1, limit = 10) =>
     api.get('/orders', { params: { page, limit } }),
+
+  getOrderById: (id) =>
+    api.get(`/orders/${id}`),
 };

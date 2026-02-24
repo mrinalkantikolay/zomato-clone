@@ -82,7 +82,7 @@ const Navbar = () => {
                         <ShoppingCart size={16} />
                         My Orders
                       </Link>
-                      {user?.role === 'admin' && (
+                      {(user?.role === 'admin' || user?.role === 'restaurant_owner') && (
                         <Link
                           to="/admin"
                           onClick={() => setProfileOpen(false)}
@@ -150,7 +150,7 @@ const Navbar = () => {
                   <Link to="/profile" onClick={() => setMenuOpen(false)} className="btn-ghost justify-start">
                     <User size={18} /> Profile
                   </Link>
-                  {user?.role === 'admin' && (
+                  {(user?.role === 'admin' || user?.role === 'restaurant_owner') && (
                     <Link to="/admin" onClick={() => setMenuOpen(false)} className="btn-ghost justify-start text-primary">
                       <ChefHat size={18} /> Admin Panel
                     </Link>

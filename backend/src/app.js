@@ -121,6 +121,14 @@ app.use("/api/v1/payments", paymentRoutes);
 const adminRoutes = require("./routes/admin.routes");
 app.use("/api/v1/admin", adminRoutes);
 
+// Super Admin Routes (Platform Management)
+const superadminRoutes = require("./routes/superadmin.routes");
+app.use("/api/v1/superadmin", superadminRoutes);
+
+// Owner Routes (Restaurant Owner Dashboard)
+const ownerRoutes = require("./routes/owner.routes");
+app.use("/api/v1/owner", ownerRoutes);
+
 // Upload Routes
 const uploadRoutes = require("./routes/upload.routes");
 app.use("/api/v1/upload", uploadRoutes);

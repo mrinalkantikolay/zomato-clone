@@ -43,7 +43,7 @@ const startServer = async () => {
 
     // Sync MySQL tables only in development (dangerous in production)
     if (NODE_ENV === "development") {
-      await sequelize.sync();
+      await sequelize.sync({ alter: true });
       console.log(" MySQL tables synced (dev mode)");
     }
 
