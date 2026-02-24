@@ -10,13 +10,20 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('backend') {
+                    sh 'npm install'
+                }
+                dir('frontend') {
+                    sh 'npm install'
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh 'npm test || echo "No tests defined"'
+                dir('backend') {
+                    sh 'npm test || echo "No tests defined"'
+                }
             }
         }
 

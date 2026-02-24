@@ -252,4 +252,38 @@ router.post("/logout-all", protect, authController.logoutAll);
  */
 router.get("/me", protect, authController.getMe);
 
+/**
+ * @swagger
+ * /api/v1/auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               phone:
+ *                 type: string
+ *                 example: "+91 98765 43210"
+ *               avatar:
+ *                 type: string
+ *                 example: "https://example.com/avatar.jpg"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: No valid fields to update
+ *       401:
+ *         description: Not authenticated
+ */
+router.put("/profile", protect, authController.updateProfile);
+
 module.exports = router;

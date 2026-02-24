@@ -58,7 +58,7 @@ const useAuthStore = create((set, get) => ({
         isLoading: false,
         error: null,
       });
-      return { success: true };
+      return { success: true, user };
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
       set({ isLoading: false, error: message });
@@ -123,6 +123,27 @@ const useAuthStore = create((set, get) => ({
           isInitialized: true,
         });
       }
+    }
+  },
+
+  // ============================================
+  // UPDATE PROFILE
+  // ============================================
+  updateProfile: async (data) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { data: response } = await authAPI.updateProfile(data);
+      const updatedUser = response.data.user;
+      set({
+        user: updatedUser,
+        isLoading: false,
+        error: null,
+      });
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Profile update failed';
+      set({ isLoading: false, error: message });
+      return { success: false, message };
     }
   },
 

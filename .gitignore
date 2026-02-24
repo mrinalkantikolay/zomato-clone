@@ -231,3 +231,8 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/README.md
+
+# Backend specific
+backend/node_modules/
+backend/.env
+backend/dump.rdb

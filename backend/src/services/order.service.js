@@ -16,13 +16,19 @@ const placeOrder = async (userId, address) => {
     throw new ApiError(400, "Cart is empty");
   }
 
-  // Create order
+  // Create order as PENDING — restaurant owner must confirm
+  const now = new Date();
   const order = await Order.create({
     userId,
     restaurantId: cart.restaurantId,
     items: cart.items,
     totalAmount: cart.totalAmount,
     deliveryAddress: address || null,
+    status: "pending",
+    estimatedDeliveryTime: new Date(now.getTime() + 40 * 60 * 1000), // +40 min
+    statusHistory: [
+      { status: "pending", timestamp: now, updatedBy: "system" },
+    ],
   });
 
   // Clear cart after order placement
@@ -54,7 +60,22 @@ const getUserOrders = async (userId, page = 1, limit = 10) => {
   };
 };
 
+/**
+ * GET SINGLE ORDER BY ID
+ * ----------------------
+ * Customer can fetch their own order status
+ */
+const getOrderById = async (orderId, userId) => {
+  const order = await Order.findById(orderId);
+  if (!order) throw new ApiError(404, "Order not found");
+  if (order.userId.toString() !== userId.toString()) {
+    throw new ApiError(403, "Not your order");
+  }
+  return order;
+};
+
 module.exports = {
   placeOrder,
   getUserOrders,
+  getOrderById,
 };

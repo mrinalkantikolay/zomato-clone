@@ -23,7 +23,8 @@ const ProtectedRoute = ({ role, redirectTo = '/login' }) => {
     return <Navigate to={`${redirectTo}?returnTo=${returnTo}`} replace />;
   }
 
-  if (role && user?.role !== role) {
+  const allowedRoles = Array.isArray(role) ? role : role ? [role] : [];
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/" replace />;
   }
 

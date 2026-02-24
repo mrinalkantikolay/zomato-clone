@@ -34,7 +34,13 @@ const Login = () => {
       if (isLoading) return; // Prevent double-submit
       const result = await login(formData);
       if (result?.success) {
-        navigate(decodeURIComponent(returnTo));
+        // Redirect admin/owner to admin panel, regular users to returnTo
+        const role = result.user?.role;
+        if (role === 'admin' || role === 'restaurant_owner') {
+          navigate('/admin');
+        } else {
+          navigate(decodeURIComponent(returnTo));
+        }
       }
     },
     [formData, isLoading, login, navigate, returnTo]

@@ -2,6 +2,11 @@ const authService = require("../services/auth.service");
 const UserDTO = require("../dtos/user.dto");
 const asyncHandler = require("../utils/asyncHandler");
 const AuditLogger = require("../utils/auditLogger");
+const {
+  REFRESH_COOKIE_OPTIONS,
+  CLEAR_COOKIE_OPTIONS,
+  COOKIE_NAME,
+} = require("../config/cookie");
 
 /**
  * Auth Controller
@@ -23,12 +28,7 @@ const signup = asyncHandler(async (req, res) => {
   const result = await authService.signup(req.body, deviceInfo);
 
   // Set refresh token in httpOnly cookie (secure, not accessible via JS)
-  res.cookie("refreshToken", result.refreshToken, {
-    httpOnly: true, // Prevents XSS attacks
-    secure: process.env.NODE_ENV === "production", // HTTPS only in production
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+  res.cookie(COOKIE_NAME, result.refreshToken, REFRESH_COOKIE_OPTIONS);
 
   // Audit log: User signup
   // NOTE: Do NOT spread req — it loses non-enumerable properties (headers, socket)
@@ -59,12 +59,7 @@ const login = asyncHandler(async (req, res) => {
   const result = await authService.login(req.body, deviceInfo);
 
   // Set refresh token in httpOnly cookie
-  res.cookie("refreshToken", result.refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+  res.cookie(COOKIE_NAME, result.refreshToken, REFRESH_COOKIE_OPTIONS);
 
   // Audit log: User login
   req.user = result.user;
@@ -88,7 +83,7 @@ const login = asyncHandler(async (req, res) => {
 
 const refresh = asyncHandler(async (req, res) => {
   // Get refresh token from httpOnly cookie
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies[COOKIE_NAME];
 
   const result = await authService.refreshAccessToken(refreshToken);
 
@@ -99,12 +94,7 @@ const refresh = asyncHandler(async (req, res) => {
   // This invalidates the old token and prevents replay attacks
   // ============================================================
   if (result.refreshToken) {
-    res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie(COOKIE_NAME, result.refreshToken, REFRESH_COOKIE_OPTIONS);
   }
 
   // Audit log: Token refresh
@@ -133,16 +123,12 @@ const refresh = asyncHandler(async (req, res) => {
 
 const logout = asyncHandler(async (req, res) => {
   // Get refresh token from httpOnly cookie
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.cookies[COOKIE_NAME];
 
   await authService.logout(refreshToken);
 
   // Clear refresh token cookie
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+  res.clearCookie(COOKIE_NAME, CLEAR_COOKIE_OPTIONS);
 
   // Audit log: User logout
   await AuditLogger.log(
@@ -166,11 +152,7 @@ const logoutAll = asyncHandler(async (req, res) => {
   const result = await authService.logoutAll(userId);
 
   // Clear refresh token cookie
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+  res.clearCookie(COOKIE_NAME, CLEAR_COOKIE_OPTIONS);
 
   // Audit log: Logout from all devices
   await AuditLogger.log(
@@ -203,9 +185,26 @@ const getMe = asyncHandler(async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone || "",
+        avatar: user.avatar || "",
         role: user.role,
+        createdAt: user.createdAt,
       },
     },
+  });
+});
+
+// ============================================================================
+// UPDATE PROFILE
+// ============================================================================
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const updatedUser = await authService.updateProfile(req.user._id, req.body);
+
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    data: { user: updatedUser },
   });
 });
 
@@ -216,4 +215,5 @@ module.exports = {
   logout,
   logoutAll,
   getMe,
+  updateProfile,
 };
