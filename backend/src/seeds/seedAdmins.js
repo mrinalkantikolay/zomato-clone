@@ -38,28 +38,30 @@ const seed = async () => {
     await connectMongoDB();
     await connectMySQL();
 
-    console.log("\n🔧 Seeding admin users...\n");
+    console.log("\nSeeding admin users...\n");
 
     // ── Create / update Super Admin ──
-    const hashedAdminPw = await bcrypt.hash(ADMIN_USER.password, 12);
+    const adminSalt = await bcrypt.genSalt(12);
+    const hashedAdminPw = await bcrypt.hash(ADMIN_USER.password, adminSalt);
     const admin = await User.findOneAndUpdate(
       { email: ADMIN_USER.email },
       { ...ADMIN_USER, password: hashedAdminPw },
       { upsert: true, returnDocument: "after" }
     );
-    console.log(`✅ Super Admin created`);
+    console.log(`Super Admin created`);
     console.log(`   Email:    ${ADMIN_USER.email}`);
     console.log(`   Password: ${ADMIN_USER.password}`);
     console.log(`   ID:       ${admin._id}\n`);
 
     // ── Create / update Restaurant Owner ──
-    const hashedOwnerPw = await bcrypt.hash(OWNER_USER.password, 12);
+    const ownerSalt = await bcrypt.genSalt(12);
+    const hashedOwnerPw = await bcrypt.hash(OWNER_USER.password, ownerSalt);
     const owner = await User.findOneAndUpdate(
       { email: OWNER_USER.email },
       { ...OWNER_USER, password: hashedOwnerPw },
       { upsert: true, returnDocument: "after" }
     );
-    console.log(`✅ Restaurant Owner created`);
+    console.log(`Restaurant Owner created`);
     console.log(`   Email:    ${OWNER_USER.email}`);
     console.log(`   Password: ${OWNER_USER.password}`);
     console.log(`   ID:       ${owner._id}\n`);
@@ -76,20 +78,20 @@ const seed = async () => {
         { ownerId: owner._id.toString() },
         { where: { id: ids } }
       );
-      console.log(`✅ Assigned ${ids.length} restaurants to owner:`);
+      console.log(`Assigned ${ids.length} restaurants to owner:`);
       restaurants.forEach((r) => console.log(`   • ${r.name} (ID: ${r.id})`));
     } else {
-      console.log("⚠️  No restaurants found. Run seedRestaurants.js first.");
+      console.log("No restaurants found. Run seedRestaurants.js first.");
     }
 
-    console.log("\n🎉 Done! You can now log in:\n");
+    console.log("\nDone! You can now log in:\n");
     console.log("   Super Admin:       admin@zomato.com / Admin@123");
     console.log("   Restaurant Owner:  owner@zomato.com / Owner@123");
     console.log("\n   Owner panel:  http://localhost:5173/admin\n");
 
     process.exit(0);
   } catch (error) {
-    console.error("❌ Seed failed:", error.message);
+    console.error("Seed failed:", error.message);
     process.exit(1);
   }
 };

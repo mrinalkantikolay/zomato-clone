@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Search,
   ArrowRight,
@@ -13,86 +14,177 @@ import {
   Sandwich,
   IceCreamCone,
   Coffee,
+  TrendingUp,
 } from 'lucide-react';
+import { restaurantAPI } from '../api/restaurant.api';
 
-/**
- * CUISINE CATEGORIES
- */
+/* ─── CUISINE CATEGORIES ─────────────────────── */
 const categories = [
-  { name: 'Indian', icon: Flame, color: 'from-orange-500/20 to-red-500/20' },
-  { name: 'Pizza', icon: Pizza, color: 'from-yellow-500/20 to-orange-500/20' },
-  { name: 'Chinese', icon: Soup, color: 'from-red-500/20 to-pink-500/20' },
-  { name: 'Burgers', icon: Sandwich, color: 'from-amber-500/20 to-yellow-500/20' },
-  { name: 'Desserts', icon: IceCreamCone, color: 'from-pink-500/20 to-purple-500/20' },
-  { name: 'Cafe', icon: Coffee, color: 'from-emerald-500/20 to-teal-500/20' },
+  { name: 'Indian',   icon: Flame,       color: 'from-orange-500/20 to-red-500/20' },
+  { name: 'Pizza',    icon: Pizza,       color: 'from-yellow-500/20 to-orange-500/20' },
+  { name: 'Chinese',  icon: Soup,        color: 'from-red-500/20 to-pink-500/20' },
+  { name: 'Burgers',  icon: Sandwich,    color: 'from-amber-500/20 to-yellow-500/20' },
+  { name: 'Desserts', icon: IceCreamCone,color: 'from-pink-500/20 to-purple-500/20' },
+  { name: 'Cafe',     icon: Coffee,      color: 'from-emerald-500/20 to-teal-500/20' },
 ];
 
-/**
- * FEATURED RESTAURANTS (static demo data)
- */
-const featuredRestaurants = [
-  {
-    id: 1,
-    name: 'The Spice Kitchen',
-    cuisine: 'Indian • North Indian • Biryani',
-    rating: 4.5,
-    deliveryTime: '25-30 min',
-    priceRange: '$$',
-    image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=400&fit=crop',
-  },
-  {
-    id: 2,
-    name: 'Pizza Paradise',
-    cuisine: 'Italian • Pizza • Pasta',
-    rating: 4.3,
-    deliveryTime: '20-25 min',
-    priceRange: '$$',
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&h=400&fit=crop',
-  },
-  {
-    id: 3,
-    name: 'Dragon Wok',
-    cuisine: 'Chinese • Asian • Noodles',
-    rating: 4.1,
-    deliveryTime: '30-35 min',
-    priceRange: '$',
-    image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&h=400&fit=crop',
-  },
-  {
-    id: 4,
-    name: 'Burger Barn',
-    cuisine: 'American • Burgers • Shakes',
-    rating: 4.6,
-    deliveryTime: '15-20 min',
-    priceRange: '$$',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=400&fit=crop',
-  },
-  {
-    id: 5,
-    name: 'Sushi Master',
-    cuisine: 'Japanese • Sushi • Asian',
-    rating: 4.8,
-    deliveryTime: '35-40 min',
-    priceRange: '$$$',
-    image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=400&fit=crop',
-  },
-  {
-    id: 6,
-    name: 'Taco Fiesta',
-    cuisine: 'Mexican • Tacos • Burritos',
-    rating: 4.2,
-    deliveryTime: '20-25 min',
-    priceRange: '$',
-    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&h=400&fit=crop',
-  },
-];
+/* ─── SKELETON CARD ─────────────────────────── */
+const SkeletonCard = ({ index }) => (
+  <div
+    className="rounded-2xl overflow-hidden bg-surface border border-border"
+    style={{ animationDelay: `${index * 120}ms` }}
+  >
+    <div className="h-52 bg-surface-hover animate-pulse" />
+    <div className="p-5 space-y-3">
+      <div className="flex justify-between items-center">
+        <div className="h-5 w-36 bg-surface-hover rounded-lg animate-pulse" />
+        <div className="h-5 w-12 bg-surface-hover rounded-lg animate-pulse" />
+      </div>
+      <div className="h-4 w-48 bg-surface-hover rounded-lg animate-pulse" />
+      <div className="h-4 w-24 bg-surface-hover rounded-lg animate-pulse" />
+    </div>
+  </div>
+);
 
+/* ─── RESTAURANT CARD ──────────────────────── */
+const RestaurantCard = ({ restaurant, index }) => {
+  const [imgError, setImgError] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), index * 100);
+    return () => clearTimeout(t);
+  }, [index]);
+
+  const cuisineText = restaurant.cuisine
+    ? (Array.isArray(restaurant.cuisine) ? restaurant.cuisine.join(' • ') : restaurant.cuisine)
+    : 'Multi Cuisine';
+
+  return (
+    <Link
+      to={`/restaurants/${restaurant.id}`}
+      className="group block"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(32px)',
+        transition: `opacity 0.5s ease ${index * 80}ms, transform 0.5s ease ${index * 80}ms`,
+      }}
+    >
+      <div className="relative rounded-2xl overflow-hidden border border-border bg-surface
+                      transition-all duration-400
+                      hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15
+                      hover:border-primary/30">
+
+        {/* ── Image ── */}
+        <div className="relative h-52 overflow-hidden bg-surface-hover">
+          {restaurant.imageUrl && !imgError ? (
+            <img
+              src={restaurant.imageUrl}
+              alt={restaurant.name}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2
+                            bg-gradient-to-br from-surface-hover to-surface">
+              <Utensils size={36} className="text-text-muted/40" />
+              <span className="text-xs text-text-muted/50 font-medium">{restaurant.name}</span>
+            </div>
+          )}
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+
+          {/* Delivery time badge */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5
+                          bg-black/70 backdrop-blur-md rounded-xl px-2.5 py-1.5 border border-white/10">
+            <Clock size={11} className="text-white/80" />
+            <span className="text-xs font-medium text-white">
+              {restaurant.deliveryTime || '30-40 min'}
+            </span>
+          </div>
+
+          {/* Trending badge */}
+          {index < 3 && (
+            <div className="absolute top-3 right-3 flex items-center gap-1
+                            bg-primary/90 backdrop-blur-md rounded-xl px-2.5 py-1.5">
+              <TrendingUp size={11} className="text-white" />
+              <span className="text-xs font-bold text-white">Popular</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Content ── */}
+        <div className="p-5">
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-bold text-[16px] leading-snug group-hover:text-primary
+                           transition-colors duration-200 line-clamp-1 flex-1 mr-3">
+              {restaurant.name}
+            </h3>
+            {restaurant.rating && (
+              <div className="flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/20
+                              px-2 py-0.5 rounded-lg shrink-0">
+                <Star size={11} className="text-emerald-400 fill-emerald-400" />
+                <span className="text-xs font-bold text-emerald-400">
+                  {Number(restaurant.rating).toFixed(1)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm text-text-secondary mb-4 line-clamp-1">{cuisineText}</p>
+
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-text-muted">
+              {restaurant.priceRange || '$'}
+            </span>
+            <span className="text-xs font-semibold text-primary flex items-center gap-1
+                             group-hover:gap-2 transition-all duration-200">
+              Order Now <ArrowRight size={12} />
+            </span>
+          </div>
+        </div>
+
+        {/* Bottom glow on hover */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5
+                        bg-gradient-to-r from-transparent via-primary to-transparent
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+      </div>
+    </Link>
+  );
+};
+
+/* ═══════════════════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════════════════ */
 const Home = () => {
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const res = await restaurantAPI.getAll(1, 6);
+        const data = res.data?.data || res.data?.restaurants || res.data || [];
+        setRestaurants(Array.isArray(data) ? data.slice(0, 6) : []);
+      } catch (err) {
+        console.error('Failed to load restaurants:', err);
+        setRestaurants([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRestaurants();
+  }, []);
+
   return (
     <div className="overflow-hidden">
-      {/* ============================================
+
+      {/* ══════════════════════════════════════
           HERO SECTION
-          ============================================ */}
+      ══════════════════════════════════════ */}
       <section className="relative min-h-[85vh] flex items-center">
         {/* Background Effects */}
         <div className="absolute inset-0">
@@ -104,7 +196,8 @@ const Home = () => {
         <div className="container-custom relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20
+                            rounded-full px-4 py-1.5 mb-6 animate-fade-in">
               <Flame size={14} className="text-primary" />
               <span className="text-sm text-primary font-medium">
                 Free delivery on your first order
@@ -118,7 +211,8 @@ const Home = () => {
               <span className="text-gradient">Delivered Fast</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-text-secondary max-w-xl mx-auto mb-8 leading-relaxed animate-slide-up">
+            <p className="text-lg md:text-xl text-text-secondary max-w-xl mx-auto mb-8
+                          leading-relaxed animate-slide-up">
               Discover the best restaurants near you. Order your favorite meals
               and get them delivered to your doorstep.
             </p>
@@ -133,10 +227,7 @@ const Home = () => {
                   className="input pl-11 py-4 text-base bg-surface border-border"
                 />
               </div>
-              <Link
-                to="/restaurants"
-                className="btn-primary py-4 px-8 text-base shadow-2xl shadow-primary/30"
-              >
+              <Link to="/restaurants" className="btn-primary py-4 px-8 text-base shadow-2xl shadow-primary/30">
                 <Search size={18} />
                 Find Food
               </Link>
@@ -145,41 +236,24 @@ const Home = () => {
             {/* Stats */}
             <div className="flex flex-wrap justify-center gap-5 mt-14 animate-fade-in">
               {[
-                {
-                  value: '500+',
-                  label: 'Restaurants',
-                  sub: 'Partner restaurants',
-                  icon: Utensils,
-                  gradient: 'from-orange-500 to-red-500',
-                },
-                {
-                  value: '<30',
-                  label: 'Min Delivery',
-                  sub: 'Average delivery time',
-                  icon: Clock,
-                  gradient: 'from-blue-500 to-cyan-400',
-                },
-                {
-                  value: '4.8',
-                  label: 'Avg Rating',
-                  sub: 'Customer satisfaction',
-                  icon: Star,
-                  gradient: 'from-yellow-500 to-amber-400',
-                },
+                { value: '10+',  label: 'Restaurants',   sub: 'Partner restaurants',      icon: Utensils, gradient: 'from-orange-500 to-red-500' },
+                { value: '<30',  label: 'Min Delivery',  sub: 'Average delivery time',    icon: Clock,    gradient: 'from-blue-500 to-cyan-400' },
+                { value: '4.8',  label: 'Avg Rating',    sub: 'Customer satisfaction',    icon: Star,     gradient: 'from-yellow-500 to-amber-400' },
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="relative group flex items-center gap-4 bg-surface/60 backdrop-blur-md border border-border hover:border-primary/40 rounded-2xl px-6 py-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 min-w-[200px]"
+                  className="relative group flex items-center gap-4 bg-surface/60 backdrop-blur-md
+                             border border-border hover:border-primary/40 rounded-2xl px-6 py-5
+                             transition-all duration-300 hover:-translate-y-1
+                             hover:shadow-lg hover:shadow-primary/5 min-w-[200px]"
                 >
-                  {/* Icon */}
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shrink-0 shadow-lg group-hover:scale-110 transition-transform`}>
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient}
+                                  flex items-center justify-center shrink-0 shadow-lg
+                                  group-hover:scale-110 transition-transform`}>
                     <stat.icon size={22} className="text-white" />
                   </div>
-                  {/* Text */}
                   <div className="text-left">
-                    <p className="text-2xl font-bold text-text-primary leading-none">
-                      {stat.value}
-                    </p>
+                    <p className="text-2xl font-bold text-text-primary leading-none">{stat.value}</p>
                     <p className="text-xs text-text-muted mt-1">{stat.sub}</p>
                   </div>
                 </div>
@@ -189,22 +263,17 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ============================================
+      {/* ══════════════════════════════════════
           CUISINE CATEGORIES
-          ============================================ */}
+      ══════════════════════════════════════ */}
       <section className="py-20">
         <div className="container-custom">
           <div className="flex items-center justify-between mb-10">
             <div>
               <h2 className="text-3xl font-bold">Explore Cuisines</h2>
-              <p className="text-text-secondary mt-2">
-                What are you craving today?
-              </p>
+              <p className="text-text-secondary mt-2">What are you craving today?</p>
             </div>
-            <Link
-              to="/restaurants"
-              className="btn-ghost text-primary hidden sm:flex"
-            >
+            <Link to="/restaurants" className="btn-ghost text-primary hidden sm:flex">
               View All <ChevronRight size={16} />
             </Link>
           </div>
@@ -216,9 +285,9 @@ const Home = () => {
                 to={`/restaurants?cuisine=${cat.name}`}
                 className="card-hover p-6 text-center group"
               >
-                <div
-                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}
-                >
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${cat.color}
+                                flex items-center justify-center mx-auto mb-3
+                                group-hover:scale-110 transition-transform`}>
                   <cat.icon size={24} className="text-text-primary" />
                 </div>
                 <p className="text-sm font-medium">{cat.name}</p>
@@ -228,122 +297,57 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ============================================
-          FEATURED RESTAURANTS
-          ============================================ */}
+      {/* ══════════════════════════════════════
+          FEATURED RESTAURANTS (live from DB)
+      ══════════════════════════════════════ */}
       <section className="py-20 bg-surface/30">
         <div className="container-custom">
           <div className="flex items-center justify-between mb-10">
             <div>
               <h2 className="text-3xl font-bold">Featured Restaurants</h2>
-              <p className="text-text-secondary mt-2">
-                Top picks curated just for you
-              </p>
+              <p className="text-text-secondary mt-2">Top picks curated just for you</p>
             </div>
-            <Link
-              to="/restaurants"
-              className="btn-outline btn-sm hidden sm:flex"
-            >
+            <Link to="/restaurants" className="btn-outline btn-sm hidden sm:flex">
               See All <ArrowRight size={16} />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredRestaurants.map((restaurant) => (
-              <Link
-                key={restaurant.id}
-                to={`/restaurants/${restaurant.id}`}
-                className="card-hover overflow-hidden group"
-              >
-                {/* Image */}
-                <div className="h-48 bg-gradient-to-br from-surface-hover to-surface relative overflow-hidden">
-                  {restaurant.image ? (
-                    <img
-                      src={restaurant.image}
-                      alt={restaurant.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Utensils
-                        size={40}
-                        className="text-text-muted/30 group-hover:scale-110 transition-transform"
-                      />
-                    </div>
-                  )}
-                  {/* Delivery Time Badge */}
-                  <div className="absolute bottom-3 left-3 bg-background/80 backdrop-blur-sm rounded-lg px-2.5 py-1 flex items-center gap-1">
-                    <Clock size={12} className="text-text-secondary" />
-                    <span className="text-xs font-medium">
-                      {restaurant.deliveryTime}
-                    </span>
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} index={i} />)
+              : restaurants.length > 0
+                ? restaurants.map((r, i) => (
+                    <RestaurantCard key={r.id} restaurant={r} index={i} />
+                  ))
+                : (
+                  <div className="col-span-3 text-center py-20">
+                    <Utensils size={48} className="mx-auto text-text-muted/30 mb-4" />
+                    <p className="text-text-secondary">No restaurants found</p>
+                    <Link to="/restaurants" className="btn-primary mt-4 inline-flex">
+                      Browse All
+                    </Link>
                   </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                      {restaurant.name}
-                    </h3>
-                    <div className="flex items-center gap-1 bg-success/10 px-2 py-0.5 rounded-md">
-                      <Star size={12} className="text-success fill-success" />
-                      <span className="text-xs font-semibold text-success">
-                        {restaurant.rating}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-text-secondary mb-3">
-                    {restaurant.cuisine}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-text-muted">
-                      {restaurant.priceRange}
-                    </span>
-                    <span className="text-xs text-primary font-medium flex items-center gap-1">
-                      Order Now <ArrowRight size={12} />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                )
+            }
           </div>
         </div>
       </section>
 
-      {/* ============================================
+      {/* ══════════════════════════════════════
           HOW IT WORKS
-          ============================================ */}
+      ══════════════════════════════════════ */}
       <section className="py-20">
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold">How It Works</h2>
-            <p className="text-text-secondary mt-2">
-              Three simple steps to get your food
-            </p>
+            <p className="text-text-secondary mt-2">Three simple steps to get your food</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              {
-                step: '01',
-                title: 'Choose Restaurant',
-                desc: 'Browse from hundreds of restaurants and menus near you.',
-                icon: Search,
-              },
-              {
-                step: '02',
-                title: 'Place Order',
-                desc: 'Add items to your cart and checkout with secure payment.',
-                icon: Utensils,
-              },
-              {
-                step: '03',
-                title: 'Fast Delivery',
-                desc: 'Track your order in real-time and enjoy your meal!',
-                icon: Clock,
-              },
+              { step: '01', title: 'Choose Restaurant', desc: 'Browse from restaurants and menus near you.', icon: Search },
+              { step: '02', title: 'Place Order',        desc: 'Add items to your cart and checkout securely.', icon: Utensils },
+              { step: '03', title: 'Fast Delivery',      desc: 'Track your order in real-time and enjoy!', icon: Clock },
             ].map((item) => (
               <div key={item.step} className="card p-8 text-center relative">
                 <span className="absolute top-4 right-4 text-6xl font-black text-primary/5">
@@ -353,45 +357,37 @@ const Home = () => {
                   <item.icon size={28} className="text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-                <p className="text-sm text-text-secondary leading-relaxed">
-                  {item.desc}
-                </p>
+                <p className="text-sm text-text-secondary leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ============================================
+      {/* ══════════════════════════════════════
           CTA SECTION
-          ============================================ */}
+      ══════════════════════════════════════ */}
       <section className="py-20">
         <div className="container-custom">
           <div className="card relative overflow-hidden p-12 md:p-16 text-center">
-            {/* Background glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
             <div className="absolute -top-20 -right-20 w-60 h-60 bg-primary/10 rounded-full blur-[80px]" />
 
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Ready to order?
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to order?</h2>
               <p className="text-text-secondary text-lg mb-8 max-w-md mx-auto">
-                Download the app or order directly from the web.
-                Your next meal is just a click away.
+                Order directly from the web. Your next meal is just a click away.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex justify-center">
                 <Link to="/restaurants" className="btn-primary btn-lg">
                   Explore Restaurants <ArrowRight size={20} />
-                </Link>
-                <Link to="/signup" className="btn-outline btn-lg">
-                  Create Account
                 </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
+
     </div>
   );
 };

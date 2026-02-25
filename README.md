@@ -1,390 +1,503 @@
-# Zomato Clone — Backend API 🍔
+<div align="center">
 
-This repository contains the backend for the Zomato-clone project (repository: `zomato-clone`).
-It's a modular Node.js/Express API providing user auth, restaurant/menu management, cart/orders,
-real-time order tracking via Socket.IO, and optional integrations (Cloudinary, Razorpay simulation).
+# 🍔 Zomato Clone
 
-Note: `package.json` is the authoritative dependency manifest for this Node project. A simple
-`requirements.txt` file was created in the repository root for informational purposes only.
+### A Production-Grade Full-Stack Food Delivery Platform
 
----
+<br/>
 
-## What I fixed and clarified
-- Replaced ambiguous repo clone URL with the `zomato-clone` repository name.
-- Clarified that Razorpay is simulated by the code (dummy flows) and is optional.
-- Confirmed actual health endpoint (`/api/v1/health`), Swagger UI path (`/api-docs`), and default port (`5001`).
-- Added concise setup and troubleshooting steps matching the code in `src/server.js` and `src/app.js`.
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-v5-000000?style=for-the-badge&logo=express&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-Sequelize-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7.x-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-4.x-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
----
+<br/>
 
-## Table of Contents
-- Tech stack
-- Prerequisites
-- Quick start
-- Environment variables
-- Running the app
-- API docs
-- Project layout
-- Notes & troubleshooting
+> **Real-time order tracking · Multi-role dashboards · Cloudinary uploads · Simulated payments**
 
----
+<br/>
 
-## Tech Stack (high level)
-- Node.js (v18+)
-- Express (v5)
-- MongoDB (Mongoose) — user/order data
-- MySQL (Sequelize) — restaurants/menu
-- Redis — caching/real-time location
-- Socket.IO — real-time tracking
+[🚀 Quick Start](#-quick-start) &nbsp;•&nbsp;
+[📖 API Reference](#-api-reference) &nbsp;•&nbsp;
+[🗂️ Project Structure](#️-project-structure) &nbsp;•&nbsp;
+[⚙️ Environment Variables](#️-environment-variables) &nbsp;•&nbsp;
+[🚢 Deployment](#-deployment)
 
-Key libraries: `mongoose`, `sequelize`, `redis`, `socket.io`, `express-validator`, `helmet`, `xss-clean`, `multer`, `cloudinary`, `morgan`.
+</div>
 
 ---
 
-## Prerequisites
-- Node.js >= 18
-- npm >= 9
-- MongoDB
-- MySQL
-- Redis
+## ✨ Features
+
+<table>
+  <tr>
+    <td width="50%">
+
+**🛍️ Customer Experience**
+
+- Browse restaurants with live data from DB
+- Add to cart, checkout & place orders
+- Simulated Razorpay payment flow
+- Real-time delivery tracking on a live map
+- Order history & profile management
+
+    </td>
+    <td width="50%">
+
+**🏪 Restaurant Owner**
+
+- Admin panel — manage restaurants & menus
+- View and update incoming orders
+- Live delivery partner tracking dashboard
+- Order analytics overview
+
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+
+**👑 Super Admin**
+
+- Platform-wide restaurant management
+- Approve / reject restaurant listings
+- View all orders across the platform
+
+    </td>
+    <td width="50%">
+
+**⚡ Platform**
+
+- JWT auth with refresh token rotation
+- Role-based access control (4 roles)
+- Smooth scroll (Lenis) + animated UI
+- Swagger API docs at `/api-docs`
+- Redis-backed caching & rate limiting
+
+      </td>
+
+    </tr>
+  </table>
 
 ---
 
-## Quick start (local)
+## 🛠️ Tech Stack
 
-1) Clone your repo (replace `<your-github>` with your org/user):
+### Frontend
+
+| Technology      | Version | Purpose                   |
+| --------------- | ------- | ------------------------- |
+| React + Vite    | 18      | UI framework & build tool |
+| React Router    | v6      | Client-side routing       |
+| Zustand         | Latest  | Global state management   |
+| Lenis           | Latest  | Smooth scroll             |
+| React Hot Toast | Latest  | Toast notifications       |
+| Vanilla CSS     | —       | Styling                   |
+
+### Backend
+
+| Technology         | Version    | Purpose                    |
+| ------------------ | ---------- | -------------------------- |
+| Node.js            | 18+        | Runtime                    |
+| Express            | v5         | Web framework              |
+| MongoDB + Mongoose | 9.x        | User & order data          |
+| MySQL + Sequelize  | 6.x        | Restaurant & menu data     |
+| Redis              | 5.x client | Caching + rate-limit store |
+| Socket.IO          | 4.x        | Real-time order tracking   |
+| Cloudinary         | 2.x        | Image & video storage      |
+| Swagger UI         | 5.x        | Interactive API docs       |
+
+---
+
+## 🗂️ Project Structure
+
+```
+zomato-clone/
+│
+├── 📁 backend/
+│   ├── src/
+│   │   ├── app.js              ← Express app · middleware · routes
+│   │   ├── server.js           ← Entry point · DB init · Socket.IO
+│   │   ├── config/             ← DB, Redis, Cloudinary, Swagger configs
+│   │   ├── controllers/        ← Route handlers
+│   │   ├── services/           ← Business logic
+│   │   ├── models/             ← Mongoose & Sequelize models
+│   │   ├── routes/             ← Versioned API routes (/api/v1/*)
+│   │   ├── middlewares/        ← Auth · error · rate-limit · requestId
+│   │   ├── validations/        ← express-validator schemas
+│   │   ├── dtos/               ← Response shape transformers
+│   │   ├── utils/              ← Helpers & utilities
+│   │   └── seeds/              ← DB seed scripts
+│   └── package.json
+│
+├── 📁 frontend/
+│   ├── src/
+│   │   ├── App.jsx             ← Router + layout composition
+│   │   ├── pages/
+│   │   │   ├── Home.jsx
+│   │   │   ├── Restaurants.jsx / RestaurantDetail.jsx
+│   │   │   ├── Cart.jsx · Checkout.jsx · Payment.jsx
+│   │   │   ├── OrderTracking.jsx · MyOrders.jsx
+│   │   │   ├── Profile.jsx
+│   │   │   └── admin/          ← Owner & Super Admin dashboards
+│   │   ├── components/         ← Navbar · Footer · Loader · ProtectedRoute
+│   │   ├── api/                ← Axios clients (per resource)
+│   │   ├── store/              ← Zustand stores
+│   │   └── hooks/              ← useAuth · useLenis
+│   └── package.json
+│
+├── requirements.txt            ← Informational Node.js dependency list
+└── README.md
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+| Requirement | Version         |
+| ----------- | --------------- |
+| Node.js     | >= 18           |
+| npm         | >= 9            |
+| MongoDB     | Any recent      |
+| MySQL       | 8.x recommended |
+| Redis       | 7.x recommended |
+
+---
+
+### Step 1 — Clone the Repository
 
 ```bash
 git clone https://github.com/<your-github>/zomato-clone.git
-cd zomato-clone/backend
+cd zomato-clone
 ```
 
-2) Install dependencies:
+---
+
+### Step 2 — Set Up the Backend
 
 ```bash
+cd backend
 npm install
 ```
 
-3) Copy environment template and edit values:
+> **About `requirements.txt`**
+> A `requirements.txt` file lives at the project root as a **human-readable reference** of all backend Node.js packages and their pinned versions. It is informational only — `npm install` (which reads `package.json`) is always the canonical install method.
+>
+> _Alternative install from `requirements.txt`:_
+>
+> ```bash
+> # Windows PowerShell
+> Get-Content ..\requirements.txt | Where-Object { $_ -notmatch '^(#|\s*$)' } | ForEach-Object { npm install $_ }
+>
+> # macOS / Linux
+> grep -vE '^(#|\s*$)' ../requirements.txt | xargs npm install
+> ```
+
+Copy and configure your environment file:
 
 ```bash
 cp .env.example .env
-# then edit .env with correct DB URLs and secrets
+# Edit .env with your DB URIs, secrets, and Cloudinary keys
 ```
 
-4) Start supporting services (MongoDB, MySQL, Redis) or configure cloud-hosted URLs in `.env`.
-
-5) Run the app:
+Start the dev server:
 
 ```bash
-# development (nodemon)
 npm run dev
-
-# production
-npm start
 ```
 
-Server default: `http://localhost:5001` (overridden by `PORT` in `.env`).
+| Endpoint     | URL                                   |
+| ------------ | ------------------------------------- |
+| Backend API  | `http://localhost:4005`               |
+| Swagger Docs | `http://localhost:4005/api-docs`      |
+| Health Check | `http://localhost:4005/api/v1/health` |
 
 ---
 
-## Using requirements.txt (informational)
+### Step 3 — Set Up the Frontend
 
-A `requirements.txt` file has been added to the `backend/` folder as a convenience list of the Node packages and versions used by this project. Note that for Node.js projects the canonical manifest is `package.json` and the recommended install method is `npm install`.
-
-If you'd still like to install packages from `backend/requirements.txt` (for reproducible manual installs), run the following from the `backend/` directory:
+Open a **new terminal**:
 
 ```bash
-# recommended (package.json authoritative)
-cd backend
+cd frontend
 npm install
+npm run dev
+```
 
-# alternative: bulk-install packages listed in requirements.txt
-# (skips comment/blank lines and passes each package@version to npm)
+Frontend runs at: **`http://localhost:5173`**
+
+---
+
+### Step 4 — Seed the Database _(Optional)_
+
+```bash
 cd backend
-grep -vE '^(#|\s*$)' requirements.txt | xargs npm install
+node src/seeds/seedRestaurants.js
 ```
 
-Notes:
-- `npm install` reads `package.json` and `package-lock.json` (if present) and is the preferred method.
-- The `requirements.txt` file is informational and useful when scanning the repo or generating quick lists of dependencies.
+---
 
+## ⚙️ Environment Variables
+
+Create `backend/.env` from the template below:
+
+```env
+# ── Server ──────────────────────────────────────
+PORT=4005
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+
+# ── MongoDB ─────────────────────────────────────
+MONGO_URI=mongodb://localhost:27017/zomato
+
+# ── MySQL ────────────────────────────────────────
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=yourpassword
+MYSQL_DB=zomato
+
+# ── Redis ────────────────────────────────────────
+REDIS_URL=redis://127.0.0.1:6379
+
+# ── JWT ──────────────────────────────────────────
+JWT_SECRET=your_super_secret_key_64_chars_minimum
+JWT_REFRESH_SECRET=your_refresh_secret_key
+
+# ── Cloudinary ───────────────────────────────────
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+> **Note:** Razorpay is simulated — no real Razorpay SDK is installed. Replace dummy methods in `src/services/payment.service.js` to integrate the real SDK.
 
 ---
 
-## Environment variables (examples)
-See `.env.example`. Important vars used by the code include:
+## 📖 API Reference
 
-- `PORT` — server port (default 5001)
-- `MONGO_URI` — MongoDB connection string
-- `MYSQL_*` — MySQL connection settings
-- `REDIS_URL` — Redis connection
-- `JWT_SECRET` and `JWT_EXPIRES_IN`
-- Optional: `CLOUDINARY_*`, `RAZORPAY_*` (Razorpay flow in this codebase is a dummy/simulation)
+All routes are versioned under `/api/v1`. Full interactive docs at `http://localhost:4005/api-docs`.
 
----
-
-## API docs
-
-Swagger UI is served at `/api-docs` (e.g. http://localhost:5001/api-docs).
-
-Health check: `GET /api/v1/health` — returns a small JSON payload confirming the server is healthy.
-
-All routes are mounted under `/api/v1` (see `src/app.js`).
-
----
-
-## Project layout (short)
-
-See the `src/` tree for details. Key files:
-
-- `src/server.js` — entrypoint; connects databases and starts Socket.IO
-- `src/app.js` — Express app and routes
-- `src/config/*` — DB and third-party configs
-- `src/routes/*` — route declarations
-- `src/controllers/*` — controllers
-- `src/services/*` — business logic
+| Resource          | Base Path                   | Description                             |
+| ----------------- | --------------------------- | --------------------------------------- |
+| Auth              | `/api/v1/auth`              | Signup · login · logout · refresh token |
+| Restaurants       | `/api/v1/restaurants`       | Browse & search restaurants             |
+| Menu              | `/api/v1/menu`              | Browse menu items                       |
+| Cart              | `/api/v1/cart`              | Cart management                         |
+| Orders            | `/api/v1/orders`            | Place and view orders                   |
+| Order Tracking    | `/api/v1/orders/:id/track`  | Real-time tracking endpoints            |
+| Payments          | `/api/v1/payments`          | Initiate & confirm payments             |
+| Admin             | `/api/v1/admin`             | Restaurant owner management             |
+| Super Admin       | `/api/v1/superadmin`        | Platform-wide management                |
+| Owner             | `/api/v1/owner`             | Owner dashboard operations              |
+| Delivery Partners | `/api/v1/delivery-partners` | Partner management & simulation         |
+| Upload            | `/api/v1/upload`            | Cloudinary file upload                  |
 
 ---
 
-## Notable implementation details / caveats
+## 👥 User Roles
 
-- Payment flows in `src/services/payment.service.js` simulate Razorpay behavior — there is no official `razorpay` npm package used. If you plan to integrate real Razorpay, install and configure the official SDK and replace the dummy methods.
-- `requirements.txt` in the backend is informational and lists Node packages; prefer `package.json` / `package-lock.json` for installs.
-- Swagger docs are generated from `src/config/swagger.js` — confirm and update API descriptions there if you change endpoints.
+| Role                    | Access Level                                |
+| ----------------------- | ------------------------------------------- |
+| `user`                  | Browse · order · track · manage profile     |
+| `restaurant_owner`      | Admin panel — menu · orders · live tracking |
+| `admin` _(Super Admin)_ | Platform-wide restaurant & user control     |
+| `delivery_partner`      | Location update endpoints via Socket.IO     |
 
----
-
-## Troubleshooting hints
-
-- If MongoDB fails to connect, verify `MONGO_URI` and that the mongod process is running.
-- If MySQL fails, check `MYSQL_*` vars and that the database exists; `sequelize.sync()` will create tables, but the DB must exist.
-- If Redis fails, verify `REDIS_URL` and that `redis-server` is running.
-- If port 5001 is busy, set `PORT` in `.env` or kill the occupying process (`lsof -ti:5001` then `kill -9 <pid>`).
+Role-based routing is enforced in **both** the React frontend (`ProtectedRoute`) and the backend (auth middleware).
 
 ---
 
-If you'd like, I can:
+## 📡 Real-Time Order Tracking
 
-- update the GitHub repo description and `README.md` in the root of the repository with this improved copy,
-- remove incorrectly listed dependencies from `package.json`, or
-- add a short CONTRIBUTING or Deployment guide.
+Socket.IO powers live delivery partner location updates:
 
-Open to next steps — tell me which you want.
-
-const socket = io('http://localhost:5001', {
+```js
+const socket = io("http://localhost:4005", {
   auth: {
-    token: 'YOUR_JWT_TOKEN',
-    role: 'user' // or 'delivery_partner', 'admin', 'restaurant'
-  }
+    token: "YOUR_JWT_TOKEN",
+    role: "user", // 'delivery_partner' | 'admin' | 'restaurant_owner'
+  },
 });
 
-// Join order tracking
-socket.emit('join:order', orderId);
+// Subscribe to an order's tracking room
+socket.emit("join:order", orderId);
 
-// Listen for live location updates
-socket.on('delivery:locationUpdate', (data) => {
-  console.log('New location:', data.location);
-  // Update map marker
+// Receive live location updates
+socket.on("delivery:locationUpdate", (data) => {
+  console.log("Live location:", data.location);
+  // Update your map marker here
 });
 ```
+
+---
+
+## 🔒 Security
+
+| Feature           | Implementation                                               |
+| ----------------- | ------------------------------------------------------------ |
+| Authentication    | JWT (access + refresh tokens) · `bcryptjs` hashing           |
+| Role-Based Access | Middleware-enforced on all protected routes                  |
+| Security Headers  | `helmet`                                                     |
+| XSS Protection    | `xss-clean`                                                  |
+| CORS              | Credentials-enabled · origin-restricted                      |
+| Rate Limiting     | 100 req / 2 min per IP · Redis-backed via `rate-limit-redis` |
+| Input Validation  | `express-validator` on all write endpoints                   |
+| SQL Injection     | Prevented by Sequelize parameterized queries                 |
+| NoSQL Injection   | Prevented by Mongoose schema enforcement                     |
+| Request Size      | Capped at 10 MB                                              |
+
+---
+
+## ⚡ Performance
+
+| Optimization       | Detail                                          |
+| ------------------ | ----------------------------------------------- |
+| Redis Caching      | Restaurant/menu data cached with TTL (5–10 min) |
+| Database Indexing  | Indexes on high-frequency query fields          |
+| Pagination         | All list endpoints support `page` & `limit`     |
+| Connection Pooling | MongoDB & MySQL connection pools                |
+| DTO Pattern        | Lean, minimal response payloads                 |
+| Async/Await        | Consistent non-blocking I/O throughout          |
+
+---
+
+## 🚢 Deployment
+
+### Recommended Services
+
+| Layer   | Options                                       |
+| ------- | --------------------------------------------- |
+| Hosting | AWS EC2 · Railway · Render · DigitalOcean     |
+| MongoDB | MongoDB Atlas _(free tier available)_         |
+| MySQL   | AWS RDS · PlanetScale _(free tier available)_ |
+| Redis   | Redis Cloud · AWS ElastiCache                 |
+| Images  | Cloudinary _(already integrated)_             |
+
+### PM2 Process Manager
+
+```bash
+npm install -g pm2
+
+cd backend
+pm2 start src/server.js --name zomato-backend
+
+pm2 monit                       # Dashboard
+pm2 logs zomato-backend         # Logs
+pm2 restart zomato-backend      # Restart
+```
+
+### Production Checklist
+
+- [ ] Set `NODE_ENV=production`
+- [ ] Use a strong `JWT_SECRET` (64+ characters)
+- [ ] Configure production DB & Redis URLs
+- [ ] Set `FRONTEND_URL` to your production domain
+- [ ] Enable SSL / TLS on your host
+- [ ] Set up Nginx as a reverse proxy
 
 ---
 
 ## 🧪 Testing
 
-### Manual Testing with cURL
+### cURL Quick Tests
 
 ```bash
-# Signup
-curl -X POST http://localhost:5001/api/v1/auth/signup \
+# Sign up
+curl -X POST http://localhost:4005/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"name":"John Doe","email":"john@example.com","password":"Password@123"}'
 
 # Login
-curl -X POST http://localhost:5001/api/v1/auth/login \
+curl -X POST http://localhost:4005/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"john@example.com","password":"Password@123"}'
 
-# Get restaurants (with token)
-curl http://localhost:5001/api/v1/restaurants \
+# Get restaurants (authenticated)
+curl http://localhost:4005/api/v1/restaurants \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### Testing Real-Time Tracking
+### Simulate Delivery Tracking
 
 ```bash
-# 1. Create delivery partner
-curl -X POST http://localhost:5001/api/v1/delivery-partners \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Rahul","phone":"9876543210","email":"rahul@delivery.com","vehicleNumber":"DL01AB1234"}'
-
-# 2. Simulate location updates (auto-updates every 5 seconds)
-curl -X POST http://localhost:5001/api/v1/delivery-partners/simulate-location \
+curl -X POST http://localhost:4005/api/v1/delivery-partners/simulate-location \
   -H "Content-Type: application/json" \
   -d '{"partnerId":"PARTNER_ID","orderId":"ORDER_ID","duration":60}'
 ```
 
 ---
 
-## 🚢 Deployment
-
-### Prerequisites
-- Node.js hosting (Heroku, AWS, DigitalOcean, Railway)
-- MongoDB Atlas or self-hosted MongoDB
-- MySQL database (AWS RDS, PlanetScale)
-- Redis instance (Redis Cloud, AWS ElastiCache)
-
-### Environment Setup
-
-1. Set `NODE_ENV=production`
-2. Use strong `JWT_SECRET` (64+ characters)
-3. Configure production database URLs
-4. Set up SSL/TLS certificates
-5. Configure CORS for production domain
-6. Set up PM2 for process management
-
-### Deployment with PM2
-
-```bash
-# Install PM2 globally
-npm install -g pm2
-
-# Start application
-pm2 start src/server.js --name zomato-backend
-
-# Monitor
-pm2 monit
-
-# View logs
-pm2 logs zomato-backend
-
-# Restart
-pm2 restart zomato-backend
-```
-
-### Recommended Services
-- **Hosting:** AWS EC2, Railway, Render, DigitalOcean
-- **MongoDB:** MongoDB Atlas (Free tier available)
-- **MySQL:** AWS RDS, PlanetScale (Free tier available)
-- **Redis:** Redis Cloud (Free tier available), AWS ElastiCache
-- **CDN:** Cloudflare, AWS CloudFront
-
----
-
-## ✅ Production Readiness
-
-### Current Score: **98/100**
-
-**Strengths:**
-- ✅ Excellent architecture and code organization
-- ✅ Comprehensive security (JWT, Helmet, XSS, CORS, Rate Limiting)
-- ✅ Advanced real-time features (Socket.IO + Redis)
-- ✅ API versioning for future compatibility
-- ✅ Complete Swagger documentation
-- ✅ Proper error handling and validation
-- ✅ Database indexing and caching
-
-
-
-
-
----
-
-## 🔒 Security Features
-
-- ✅ JWT-based authentication with bcrypt hashing
-- ✅ Role-based access control (4 roles)
-- ✅ Helmet security headers
-- ✅ XSS protection with xss-clean
-- ✅ CORS protection with credentials
-- ✅ Rate limiting (100 req/15min)
-- ✅ Input validation & sanitization
-- ✅ SQL injection prevention (Sequelize ORM)
-- ✅ NoSQL injection prevention (Mongoose)
-- ✅ Socket authentication with JWT
-- ✅ Request size limiting (10MB)
-
----
-
-## ⚡ Performance Optimizations
-
-- ✅ Redis caching (5-10min TTL) - 80% faster lookups
-- ✅ Database indexing on frequently queried fields
-- ✅ Pagination on all list endpoints
-- ✅ Database transactions for critical operations
-- ✅ Connection pooling (MongoDB + MySQL)
-- ✅ Async/await error handling
-- ✅ DTO pattern for reduced payload sizes
-
----
-
 ## 🐛 Troubleshooting
 
-### MongoDB Connection Error
-```bash
-# Check if MongoDB is running
-mongod --version
-ps aux | grep mongod
+<details>
+<summary><strong>MongoDB connection fails</strong></summary>
 
-# Start MongoDB
-mongod
+```bash
+mongod --version    # Verify installation
+mongod              # Start MongoDB
 ```
 
-### MySQL Connection Error
-```bash
-# Check MySQL status
-mysql.server status
+</details>
 
-# Start MySQL
+<details>
+<summary><strong>MySQL connection fails</strong></summary>
+
+```bash
+mysql.server status     # macOS / Linux
 mysql.server start
+# Windows: Open Services → MySQL → Start
 ```
 
-### Redis Connection Error
+</details>
+
+<details>
+<summary><strong>Redis connection fails</strong></summary>
+
 ```bash
-# Check Redis
-redis-cli ping
-
-# Start Redis
-redis-server
+redis-cli ping      # Should return PONG
+redis-server        # Start Redis
 ```
 
-### Port Already in Use
+</details>
+
+<details>
+<summary><strong>Port 4005 already in use</strong></summary>
+
 ```bash
-# Find process using port 5001
-lsof -ti:5001
+# macOS / Linux
+kill -9 $(lsof -ti:4005)
 
-# Kill process
-kill -9 $(lsof -ti:5001)
+# Windows PowerShell
+Stop-Process -Id (Get-NetTCPConnection -LocalPort 4005).OwningProcess -Force
 ```
 
-1d46155 (Add order tracking with Redis, Socket.IO auth, delivery partner module, and API versioning)
+</details>
 
-## 👥 Contributing
+<details>
+<summary><strong>CORS errors in browser</strong></summary>
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Ensure `FRONTEND_URL` in `backend/.env` exactly matches your frontend URL including port (e.g. `http://localhost:5173`).
 
----
+</details>
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **[MIT License](LICENSE)**.
 
 ---
 
-## 🙏 Acknowledgments
+<div align="center">
 
-- Express.js team for the amazing framework
-- MongoDB, MySQL, and Redis communities
-- Socket.IO team for real-time capabilities
-- All open-source contributors
+**Built with Node.js · Express · React · MongoDB · MySQL · Redis · Socket.IO**
 
----
+<br/>
 
-**Built with ❤️ using Node.js, Express, MongoDB, MySQL, Redis, and Socket.IO**
+⭐ If you found this project useful, consider giving it a star!
 
-
+</div>

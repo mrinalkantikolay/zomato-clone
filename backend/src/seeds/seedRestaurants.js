@@ -201,7 +201,7 @@ const menuTemplates = {
 const seed = async () => {
   try {
     await sequelize.authenticate();
-    console.log("✅ MySQL connected");
+    console.log("MySQL connected");
 
     // Sync tables
     await Restaurant.sync({ alter: true });
@@ -210,11 +210,11 @@ const seed = async () => {
     // Clear existing data (menu first due to FK)
     await Menu.destroy({ where: {} });
     await Restaurant.destroy({ where: {} });
-    console.log("🗑️  Cleared old data");
+    console.log("Cleared old data");
 
     // Insert restaurants
     const created = await Restaurant.bulkCreate(restaurants);
-    console.log(`✅ Seeded ${created.length} restaurants`);
+    console.log(`Seeded ${created.length} restaurants`);
 
     // Insert menu items for each restaurant
     let totalMenuItems = 0;
@@ -228,14 +228,14 @@ const seed = async () => {
         }));
         await Menu.bulkCreate(items);
         totalMenuItems += items.length;
-        console.log(`   📋 ${rest.name} → ${items.length} dishes`);
+        console.log(`   ${rest.name} → ${items.length} dishes`);
       }
     }
 
-    console.log(`\n✅ Seeded ${totalMenuItems} menu items total!`);
+    console.log(`\nSeeded ${totalMenuItems} menu items total!`);
     process.exit(0);
   } catch (error) {
-    console.error("❌ Seed failed:", error.message);
+    console.error("Seed failed:", error.message);
     process.exit(1);
   }
 };

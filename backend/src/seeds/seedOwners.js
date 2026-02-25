@@ -33,13 +33,13 @@ const seed = async () => {
   try {
     // Connect
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ MongoDB connected");
+    console.log("MongoDB connected");
     await sequelize.authenticate();
-    console.log("✅ MySQL connected");
+    console.log("MySQL connected");
 
     // Get all restaurants
     const restaurants = await Restaurant.findAll();
-    console.log(`📋 Found ${restaurants.length} restaurants\n`);
+    console.log(`Found ${restaurants.length} restaurants\n`);
 
     const credentials = [];
 
@@ -47,7 +47,7 @@ const seed = async () => {
       // Find the restaurant
       const restaurant = restaurants.find((r) => r.name === owner.restaurant);
       if (!restaurant) {
-        console.log(`⚠️  Restaurant "${owner.restaurant}" not found — skipping`);
+        console.log(`Restaurant "${owner.restaurant}" not found — skipping`);
         continue;
       }
 
@@ -59,17 +59,18 @@ const seed = async () => {
           user.role = "restaurant_owner";
           await user.save();
         }
-        console.log(`♻️  ${owner.email} already exists — reusing`);
+        console.log(`${owner.email} already exists — reusing`);
       } else {
         // Create new user
-        const hashedPassword = await bcrypt.hash(owner.password, 12);
+        const salt = await bcrypt.genSalt(12);
+        const hashedPassword = await bcrypt.hash(owner.password, salt);
         user = await User.create({
           name: owner.name,
           email: owner.email,
           password: hashedPassword,
           role: "restaurant_owner",
         });
-        console.log(`✅ Created owner: ${owner.name} (${owner.email})`);
+        console.log(`Created owner: ${owner.name} (${owner.email})`);
       }
 
       // Link restaurant to owner
@@ -106,11 +107,11 @@ const seed = async () => {
       );
     }
     console.log("═".repeat(90));
-    console.log(`\n✅ ${credentials.length} owner accounts created and linked!\n`);
+    console.log(`\n${credentials.length} owner accounts created and linked!\n`);
 
     process.exit(0);
   } catch (error) {
-    console.error("❌ Seed failed:", error.message);
+    console.error("Seed failed:", error.message);
     process.exit(1);
   }
 };
