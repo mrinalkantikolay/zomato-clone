@@ -23,6 +23,7 @@ express-validator@^7.3.1          # Request validation
 
 ## Caching & Real-time
 redis@^5.10.0                     # Redis client (caching + token revocation)
+rate-limit-redis@^4.3.1           # Redis store for express-rate-limit
 socket.io@^4.8.3                  # WebSocket for real-time features
 
 ## File Upload & Storage

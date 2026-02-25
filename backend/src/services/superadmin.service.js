@@ -51,7 +51,8 @@ const createRestaurantWithOwner = async (restaurantData, ownerName, ownerEmail) 
   } else {
     // Create new owner account with auto-generated password
     generatedPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(generatedPassword, 12);
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(generatedPassword, salt);
     ownerUser = await User.create({
       name: ownerName,
       email: ownerEmail,

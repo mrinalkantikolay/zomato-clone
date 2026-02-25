@@ -60,36 +60,40 @@ const generateRefreshToken = (userId) => {
  * evict the oldest one (FIFO) before allowing the new login.
  */
 const enforceDeviceLimit = async (userId) => {
-  const pattern = `refresh:${userId}:*`;
-  const sessions = [];
-
-  // Collect all active sessions for this user
-  let cursor = 0;
-  do {
-    const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
-    cursor = result.cursor;
-    for (const key of result.keys) {
-      const data = await redisClient.get(key);
-      if (data) {
-        sessions.push({ key, ...JSON.parse(data) });
-      }
-    }
-  } while (cursor !== 0);
-
-  // If at or over the limit, evict the oldest sessions
-  if (sessions.length >= MAX_DEVICES) {
-    // Sort by createdAt ascending (oldest first)
-    sessions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-
-    // Evict enough sessions to make room for 1 new one
-    const toEvict = sessions.length - MAX_DEVICES + 1;
-    for (let i = 0; i < toEvict; i++) {
-      await redisClient.del(sessions[i].key);
-      console.log(`[AUTH] Evicted oldest session for user ${userId}: ${sessions[i].tokenId}`);
-    }
+  // Skip silently if Redis is unavailable — device limiting is non-critical
+  if (!redisClient.isReady) {
+    console.warn("[AUTH] Device limit check skipped: Redis not ready");
+    return 0;
   }
 
-  return sessions.length;
+  try {
+    const pattern = `refresh:${userId}:*`;
+    const sessions = [];
+
+    let cursor = 0;
+    do {
+      const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
+      cursor = result.cursor;
+      for (const key of result.keys) {
+        const data = await redisClient.get(key);
+        if (data) sessions.push({ key, ...JSON.parse(data) });
+      }
+    } while (cursor !== 0);
+
+    if (sessions.length >= MAX_DEVICES) {
+      sessions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      const toEvict = sessions.length - MAX_DEVICES + 1;
+      for (let i = 0; i < toEvict; i++) {
+        await redisClient.del(sessions[i].key);
+        console.log(`[AUTH] Evicted oldest session for user ${userId}: ${sessions[i].tokenId}`);
+      }
+    }
+
+    return sessions.length;
+  } catch (err) {
+    console.warn(`[AUTH] Device limit check failed: ${err.message}`);
+    return 0;
+  }
 };
 
 /**
@@ -100,7 +104,13 @@ const enforceDeviceLimit = async (userId) => {
  * Enforces MAX_DEVICES limit — evicts oldest session if needed.
  */
 const storeRefreshToken = async (userId, tokenId, deviceInfo = null) => {
-  // Enforce device limit BEFORE storing the new token
+  // CRITICAL: Redis must be ready — without it, refresh token can't be stored
+  // A token issued without Redis storage becomes permanently invalid (ghost login)
+  if (!redisClient.isReady) {
+    throw new ApiError(503, "Authentication service temporarily unavailable. Please try again.");
+  }
+
+  // Enforce device limit (silently skips if it fails internally)
   await enforceDeviceLimit(userId);
 
   const key = `refresh:${userId}:${tokenId}`;
@@ -111,7 +121,6 @@ const storeRefreshToken = async (userId, tokenId, deviceInfo = null) => {
     deviceInfo,
   });
 
-  // Store with 7-day TTL (604800 seconds)
   await redisClient.setEx(key, 604800, value);
 };
 
@@ -120,13 +129,15 @@ const storeRefreshToken = async (userId, tokenId, deviceInfo = null) => {
  * Returns token data if valid, null if revoked/expired
  */
 const verifyRefreshToken = async (userId, tokenId) => {
-  const key = `refresh:${userId}:${tokenId}`;
-  const data = await redisClient.get(key);
-
-  if (!data) {
-    return null; // Token revoked or expired
+  if (!redisClient.isReady) {
+    // Redis down — treat as invalid token (forces re-login, which is safe)
+    console.warn("[AUTH] Token verification skipped: Redis not ready");
+    return null;
   }
 
+  const key = `refresh:${userId}:${tokenId}`;
+  const data = await redisClient.get(key);
+  if (!data) return null;
   return JSON.parse(data);
 };
 
@@ -205,7 +216,8 @@ const signup = async ({ name, email, password }, deviceInfo = null) => {
     throw new ApiError(409, "User already exists");
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(String(password), salt);
 
   const user = await User.create({
     name,
@@ -247,7 +259,7 @@ const login = async ({ email, password }, deviceInfo = null) => {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = await bcrypt.compare(String(password), user.password);
 
   if (!isMatch) {
     throw new ApiError(401, "Invalid email or password");
