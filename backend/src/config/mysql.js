@@ -9,6 +9,14 @@ const sequelize = new Sequelize(
     port: process.env.MYSQL_PORT || 3306,
     dialect: "mysql",
     logging: false,
+
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+
     pool: {
       max: 10,
       min: 0,
@@ -22,7 +30,6 @@ const connectMySQL = async () => {
   try {
     await sequelize.authenticate();
     console.log("MySQL connected via sequelize");
-
   } catch (error) {
     console.error("MySQL connection failed", error.message);
     process.exit(1);
@@ -30,5 +37,6 @@ const connectMySQL = async () => {
 };
 
 module.exports = {
-  sequelize, connectMySQL
+  sequelize,
+  connectMySQL,
 };
