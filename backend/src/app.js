@@ -16,7 +16,7 @@ const app = express();
 
 // CORS Configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: process.env.FRONTEND_URL || "https://foodie-hub-hq3j.onrender.com",
   credentials: true,
   optionsSuccessStatus: 200,
 };
