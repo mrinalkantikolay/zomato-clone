@@ -90,36 +90,45 @@ const useAuthStore = create((set, get) => ({
   checkAuth: async () => {
     const token = localStorage.getItem('accessToken');
 
-    try {
-      if (token) {
-        // Fast path: use /auth/me (no token rotation, just verify)
-        const { data } = await authAPI.getMe({ _skipAuthRedirect: true });
-        set({
-          user: data.data.user,
-          isAuthenticated: true,
-          isInitialized: true,
-        });
-        return;
-      }
-
-      // No access token in localStorage, but a refresh cookie may still exist.
-      const { data } = await authAPI.refresh({ _skipAuthRedirect: true });
-      const { user, accessToken } = data.data;
-
-      localStorage.setItem('accessToken', accessToken);
-      set({
-        user,
-        isAuthenticated: true,
-        isInitialized: true,
-      });
-    } catch {
-      // Auth restore failed — user is logged out.
-      localStorage.removeItem('accessToken');
+    if (!token) {
+      // No token at all — user is not logged in, skip refresh to avoid 401
       set({
         user: null,
         isAuthenticated: false,
         isInitialized: true,
       });
+      return;
+    }
+
+    try {
+      // Fast path: use /auth/me (no token rotation, just verify)
+      const { data } = await authAPI.getMe({ _skipAuthRedirect: true });
+      set({
+        user: data.data.user,
+        isAuthenticated: true,
+        isInitialized: true,
+      });
+    } catch {
+      // Token may be expired — try refresh (cookie-based)
+      try {
+        const { data } = await authAPI.refresh({ _skipAuthRedirect: true });
+        const { user, accessToken } = data.data;
+
+        localStorage.setItem('accessToken', accessToken);
+        set({
+          user,
+          isAuthenticated: true,
+          isInitialized: true,
+        });
+      } catch {
+        // Auth restore failed — user is logged out.
+        localStorage.removeItem('accessToken');
+        set({
+          user: null,
+          isAuthenticated: false,
+          isInitialized: true,
+        });
+      }
     }
   },
 
