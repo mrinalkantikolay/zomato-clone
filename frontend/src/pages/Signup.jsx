@@ -36,6 +36,7 @@ const INPUT_CLASS =
 const Signup = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const { signup, isLoading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
@@ -44,6 +45,7 @@ const Signup = () => {
   const handleChange = useCallback(
     (e) => {
       clearError();
+      setValidationError('');
       setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     },
     [clearError]
@@ -57,15 +59,25 @@ const Signup = () => {
     async (e) => {
       e.preventDefault();
       if (isLoading) return; // Prevent double-submit
+
+      // Client-side validations
+      if (!formData.name || !formData.email || !formData.password) {
+        setValidationError('All fields are required.');
+        return;
+      }
+
+      if (strength.score < 3) {
+        setValidationError('Please choose a stronger password.');
+        return;
+      }
+
       const result = await signup(formData);
       if (result?.success) {
         navigate('/');
       }
     },
-    [formData, isLoading, signup, navigate]
+    [formData, isLoading, strength.score, signup, navigate]
   );
-
-  const isSubmitDisabled = isLoading || strength.score < 3;
 
   return (
     <>
@@ -148,12 +160,12 @@ const Signup = () => {
             </div>
 
             {/* Error */}
-            {error && (
+            {(error || validationError) && (
               <div
                 role="alert"
                 className="bg-danger/10 border border-danger/20 text-danger text-sm rounded-lg px-4 py-3 mb-5 animate-slide-down"
               >
-                {error}
+                {error || validationError}
               </div>
             )}
 
@@ -248,8 +260,8 @@ const Signup = () => {
               {/* Signup Button */}
               <button
                 type="submit"
-                disabled={isSubmitDisabled}
-                className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-lg transition-all active:scale-[0.98] shadow-lg shadow-primary/20 mt-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-primary/30"
+                disabled={isLoading}
+                className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-lg transition-all active:scale-[0.98] shadow-lg shadow-primary/20 mt-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-primary/30 uppercase tracking-wide"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
