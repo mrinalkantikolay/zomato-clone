@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authAPI } from '../api/auth';
+import { authAPI } from '../api/auth.api';
 
 /**
  * Auth Store (Zustand)
