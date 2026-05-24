@@ -10,6 +10,8 @@ const requestIdMiddleware = require("./middlewares/requestId.middleware");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 /* =========================
    GLOBAL MIDDLEWARE
 ========================= */
