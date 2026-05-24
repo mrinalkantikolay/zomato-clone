@@ -21,7 +21,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,                      // XSS protection — JS cannot read
   secure: isProduction,                // HTTPS-only in production
-  sameSite: isProduction ? "strict" : "lax",  // CSRF protection (lax in dev for easier testing)
+  sameSite: isProduction ? "none" : "lax",  // CSRF protection (lax in dev for easier testing)
   path: "/api/v1/auth",               // Only sent to auth endpoints
   maxAge: 7 * 24 * 60 * 60 * 1000,    // 7 days in milliseconds
 };
@@ -34,7 +34,7 @@ const REFRESH_COOKIE_OPTIONS = {
 const CLEAR_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? "strict" : "lax",
+  sameSite: isProduction ? "none" : "lax",
   path: "/api/v1/auth",
 };
 
