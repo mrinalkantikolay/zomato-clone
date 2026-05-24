@@ -11,7 +11,7 @@ const requestIdMiddleware = require("./middlewares/requestId.middleware");
 const app = express();
 
 /* =========================================================
-   TRUST PROXY (RENDER / RAILWAY / PRODUCTION FIX)
+   TRUST PROXY (RENDER / PRODUCTION COOKIE FIX)
 ========================================================= */
 app.set("trust proxy", 1);
 
@@ -20,38 +20,36 @@ app.set("trust proxy", 1);
 ========================================================= */
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "https://foodie-hub-hq3j.onrender.com",
-  credentials: true, // MUST BE TRUE for cookies
+  credentials: true, // MUST for cookies
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  exposedHeaders: ["set-cookie"],
 };
 
 app.use(cors(corsOptions));
 
 /* =========================================================
-   BODY PARSING MIDDLEWARE
+   BODY PARSER + COOKIE PARSER
 ========================================================= */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // REQUIRED for refresh token cookie access
+app.use(cookieParser()); // REQUIRED for req.cookies
 
 /* =========================================================
-   SECURITY MIDDLEWARE
+   SECURITY HEADERS
 ========================================================= */
 app.use(helmet());
 
 /* =========================================================
-   REQUEST TRACKING + LOGGING
+   REQUEST LOGGING + ID
 ========================================================= */
 app.use(requestIdMiddleware);
 app.use(morgan("dev"));
 
 /* =========================================================
-   RATE LIMITER (IN-MEMORY DEFAULT)
-   (Redis upgrade happens in server.js)
+   RATE LIMITER (DEFAULT MEMORY STORE)
 ========================================================= */
 const limiterOptions = {
-  windowMs: 2 * 60 * 1000,
+  windowMs: 2 * 60 * 1000, // 2 minutes
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -60,9 +58,9 @@ const limiterOptions = {
 const limiter = rateLimit(limiterOptions);
 app.use(limiter);
 
-/**
- * Upgrade rate limiter to Redis (called from server.js)
- */
+/* =========================================================
+   OPTIONAL: REDIS RATE LIMITER UPGRADE
+========================================================= */
 app.upgradeRateLimiter = () => {
   try {
     const { RedisStore } = require("rate-limit-redis");
@@ -73,88 +71,55 @@ app.upgradeRateLimiter = () => {
         sendCommand: (...args) => redisClient.sendCommand(args),
       });
 
-      // remove old limiter
-      app._router.stack = app._router.stack.filter(
-        (layer) => layer.handle !== limiter
-      );
-
-      app.use(rateLimit(limiterOptions));
-
       console.log("✅ Rate limiter upgraded to Redis store");
     }
   } catch (error) {
     console.warn(
-      "⚠️ Rate limiter Redis upgrade failed, using memory:",
+      "⚠️ Redis rate limiter failed, using memory:",
       error.message
     );
   }
 };
 
 /* =========================================================
-   API DOCUMENTATION (SWAGGER)
-========================================================= */
-const { swaggerUi, swaggerDocs } = require("./config/swagger");
-
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocs, {
-    customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "Food Delivery API Documentation",
-  })
-);
-
-/* =========================================================
    ROUTES (VERSIONED API)
 ========================================================= */
 
 // AUTH
-const authRoutes = require("./routes/auth.routes");
-app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", require("./routes/auth.routes"));
 
 // RESTAURANTS
-const restaurantRoutes = require("./routes/restaurant.routes");
-app.use("/api/v1/restaurants", restaurantRoutes);
+app.use("/api/v1/restaurants", require("./routes/restaurant.routes"));
 
 // MENU
-const menuRoutes = require("./routes/menu.routes");
-app.use("/api/v1/menu", menuRoutes);
+app.use("/api/v1/menu", require("./routes/menu.routes"));
 
 // CART
-const cartRoutes = require("./routes/cart.routes");
-app.use("/api/v1/cart", cartRoutes);
+app.use("/api/v1/cart", require("./routes/cart.routes"));
 
 // ORDERS
-const orderRoutes = require("./routes/order.routes");
-app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/orders", require("./routes/order.routes"));
 
-// TRACKING (FIXED DUPLICATE PREFIX ISSUE)
-const orderTrackingRoutes = require("./routes/orderTracking.routes");
-app.use("/api/v1/tracking", orderTrackingRoutes);
+// TRACKING
+app.use("/api/v1/tracking", require("./routes/orderTracking.routes"));
 
 // PAYMENTS
-const paymentRoutes = require("./routes/payment.routes");
-app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/payments", require("./routes/payment.routes"));
 
 // ADMIN
-const adminRoutes = require("./routes/admin.routes");
-app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/admin", require("./routes/admin.routes"));
 
 // SUPER ADMIN
-const superadminRoutes = require("./routes/superadmin.routes");
-app.use("/api/v1/superadmin", superadminRoutes);
+app.use("/api/v1/superadmin", require("./routes/superadmin.routes"));
 
 // OWNER
-const ownerRoutes = require("./routes/owner.routes");
-app.use("/api/v1/owner", ownerRoutes);
+app.use("/api/v1/owner", require("./routes/owner.routes"));
 
 // UPLOAD
-const uploadRoutes = require("./routes/upload.routes");
-app.use("/api/v1/upload", uploadRoutes);
+app.use("/api/v1/upload", require("./routes/upload.routes"));
 
 // DELIVERY PARTNERS
-const deliveryPartnerRoutes = require("./routes/deliveryPartner.routes");
-app.use("/api/v1/delivery-partners", deliveryPartnerRoutes);
+app.use("/api/v1/delivery-partners", require("./routes/deliveryPartner.routes"));
 
 /* =========================================================
    HEALTH CHECK
@@ -162,7 +127,7 @@ app.use("/api/v1/delivery-partners", deliveryPartnerRoutes);
 app.get("/api/v1/health", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Server is healthy",
+    message: "Backend server is healthy",
     timestamp: new Date().toISOString(),
   });
 });
