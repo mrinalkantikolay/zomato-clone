@@ -89,40 +89,37 @@ const useAuthStore = create((set, get) => ({
   // ============================================
   checkAuth: async () => {
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-      set({ isAuthenticated: false, user: null, isInitialized: true });
-      return;
-    }
 
     try {
-      // Fast path: use /auth/me (no token rotation, just verify)
-      const { data } = await authAPI.getMe();
+      if (token) {
+        // Fast path: use /auth/me (no token rotation, just verify)
+        const { data } = await authAPI.getMe({ _skipAuthRedirect: true });
+        set({
+          user: data.data.user,
+          isAuthenticated: true,
+          isInitialized: true,
+        });
+        return;
+      }
+
+      // No access token in localStorage, but a refresh cookie may still exist.
+      const { data } = await authAPI.refresh({ _skipAuthRedirect: true });
+      const { user, accessToken } = data.data;
+
+      localStorage.setItem('accessToken', accessToken);
       set({
-        user: data.data.user,
+        user,
         isAuthenticated: true,
         isInitialized: true,
       });
     } catch {
-      // Access token expired — try refreshing via /auth/refresh
-      try {
-        const { data } = await authAPI.refresh();
-        const { user, accessToken } = data.data;
-
-        localStorage.setItem('accessToken', accessToken);
-        set({
-          user,
-          isAuthenticated: true,
-          isInitialized: true,
-        });
-      } catch {
-        // Both failed — user is logged out
-        localStorage.removeItem('accessToken');
-        set({
-          user: null,
-          isAuthenticated: false,
-          isInitialized: true,
-        });
-      }
+      // Auth restore failed — user is logged out.
+      localStorage.removeItem('accessToken');
+      set({
+        user: null,
+        isAuthenticated: false,
+        isInitialized: true,
+      });
     }
   },
 
