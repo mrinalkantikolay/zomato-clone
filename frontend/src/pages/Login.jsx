@@ -60,14 +60,13 @@ const Login = () => {
           className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center overflow-hidden bg-background border-r border-border"
           aria-hidden="true"
         >
-          {/* Background food image — full visibility with overlay gradients */}
+          {/* Background gradient — rich warm tones with overlays for readability */}
           <div className="absolute inset-0">
-            <img
-              alt=""
-              className="object-cover w-full h-full transition-all duration-700"
-              src="/login.jpg"
-              loading="eager"
-              decoding="async"
+            <div
+              className="w-full h-full"
+              style={{
+                background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 25%, #2d1b4e 50%, #1a1030 75%, #0a0a1a 100%)',
+              }}
             />
             {/* Multi-layer overlay for depth & text readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/60" />
