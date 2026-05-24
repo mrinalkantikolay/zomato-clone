@@ -8,6 +8,8 @@ const { redisClient } = require("../config/redis");
 // Maximum concurrent devices per user (oldest session evicted when exceeded)
 const MAX_DEVICES = 5;
 
+const getRefreshTokenSecret = () => process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+
 /**
  * Auth Service
  * 
@@ -47,7 +49,7 @@ const generateRefreshToken = (userId) => {
 
   const refreshToken = jwt.sign(
     { id: userId, tokenId, type: "refresh" },
-    process.env.JWT_SECRET,
+    getRefreshTokenSecret(),
     { expiresIn: "7d" } // 7 days
   );
 
@@ -78,7 +80,7 @@ const enforceDeviceLimit = async (userId) => {
         const data = await redisClient.get(key);
         if (data) sessions.push({ key, ...JSON.parse(data) });
       }
-    } while (cursor !== 0);
+    } while (Number(cursor) !== 0);
 
     if (sessions.length >= MAX_DEVICES) {
       sessions.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -145,14 +147,24 @@ const verifyRefreshToken = async (userId, tokenId) => {
  * Revoke refresh token (logout from specific device)
  */
 const revokeRefreshToken = async (userId, tokenId) => {
+  if (!redisClient.isReady) {
+    console.warn("[AUTH] Token revoke skipped: Redis not ready");
+    return 0;
+  }
+
   const key = `refresh:${userId}:${tokenId}`;
-  await redisClient.del(key);
+  return redisClient.del(key);
 };
 
 /**
  * Revoke all refresh tokens for a user (logout from all devices)
  */
 const revokeAllRefreshTokens = async (userId) => {
+  if (!redisClient.isReady) {
+    console.warn("[AUTH] Token revoke-all skipped: Redis not ready");
+    return 0;
+  }
+
   const pattern = `refresh:${userId}:*`;
   let totalRevoked = 0;
 
@@ -165,7 +177,7 @@ const revokeAllRefreshTokens = async (userId) => {
       await redisClient.del(result.keys);
       totalRevoked += result.keys.length;
     }
-  } while (cursor !== 0);
+  } while (Number(cursor) !== 0);
 
   return totalRevoked; // Return number of tokens revoked
 };
@@ -297,7 +309,7 @@ const refreshAccessToken = async (refreshToken) => {
 
   try {
     // Verify JWT signature and expiration
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(refreshToken, getRefreshTokenSecret());
 
     // Validate token type
     if (decoded.type !== "refresh") {
@@ -325,9 +337,6 @@ const refreshAccessToken = async (refreshToken) => {
     // This prevents replay attacks - if old token is used again, it's invalid
     // ============================================================
 
-    // Revoke the old refresh token
-    await revokeRefreshToken(decoded.id, decoded.tokenId);
-
     // Generate new access token (15min)
     const accessToken = generateAccessToken(user._id);
 
@@ -336,6 +345,9 @@ const refreshAccessToken = async (refreshToken) => {
 
     // Store new refresh token in Redis
     await storeRefreshToken(user._id, newTokenId, tokenData.deviceInfo);
+
+    // Revoke the old refresh token after the replacement is safely stored
+    await revokeRefreshToken(decoded.id, decoded.tokenId);
 
     return {
       user: {
@@ -362,12 +374,14 @@ const refreshAccessToken = async (refreshToken) => {
  */
 const logout = async (refreshToken) => {
   if (!refreshToken) {
-    throw new ApiError(400, "Refresh token required");
+    return {
+      message: "Logged out successfully",
+    };
   }
 
   try {
     // Decode token to get userId and tokenId
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(refreshToken, getRefreshTokenSecret());
 
     // Revoke this specific token
     await revokeRefreshToken(decoded.id, decoded.tokenId);
