@@ -20,6 +20,13 @@ const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type !== "access") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token type",
+      });
+    }
+
     const user = await User.findById(decoded.id).select("-password");
 
     // Check if user exists (might have been deleted after token was issued)
