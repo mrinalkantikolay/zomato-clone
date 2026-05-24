@@ -93,14 +93,13 @@ const Signup = () => {
           className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center overflow-hidden bg-background border-r border-border"
           aria-hidden="true"
         >
-          {/* Background food image — full visibility with overlay gradients for readability */}
+          {/* Background gradient — rich warm tones with overlays for readability */}
           <div className="absolute inset-0">
-            <img
-              alt=""
-              className="object-cover w-full h-full transition-all duration-700"
-              src="/screen.jpg"
-              loading="eager"
-              decoding="async"
+            <div
+              className="w-full h-full"
+              style={{
+                background: 'linear-gradient(135deg, #1a0a00 0%, #3d1500 25%, #5c2100 50%, #2d1200 75%, #0d0500 100%)',
+              }}
             />
             {/* Multi-layer overlay for depth & text readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/60" />
