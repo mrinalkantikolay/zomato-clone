@@ -23,7 +23,12 @@ const { sequelize } = require("./config/mysql");
 // ======================
 const connectMongoDB = require("./config/mongo");
 const { connectMySQL } = require("./config/mysql");
-const { connectRedis, shutdownRedis } = require("./config/redis");
+const {
+  connectRedis,
+  startRedisReconnectLoop,
+  shutdownRedis,
+  redisClient,
+} = require("./config/redis");
 const mongoose = require("mongoose");
 
 const PORT = process.env.PORT || 4005;
@@ -31,10 +36,18 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 
 let server;
 
+redisClient.on("ready", () => {
+  app.upgradeRateLimiter();
+});
+
 const startServer = async () => {
   try {
     // Connect ALL services before starting server (no race conditions)
-    await connectRedis();
+    const redisReady = await connectRedis();
+    if (!redisReady) {
+      startRedisReconnectLoop(() => app.upgradeRateLimiter());
+    }
+
     await connectMongoDB();
     await connectMySQL();
 
@@ -78,7 +91,7 @@ const startServer = async () => {
     server.listen(PORT, () => {
       console.log(` Server running on port ${PORT}`);
       console.log(` Environment: ${NODE_ENV}`);
-      console.log(" MongoDB + MySQL + Redis connected");
+      console.log(` MongoDB + MySQL connected${redisReady ? " + Redis connected" : " (Redis unavailable)"}`);
       console.log(" Real-time tracking enabled");
     });
 
