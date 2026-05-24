@@ -130,10 +130,12 @@ const logout = asyncHandler(async (req, res) => {
   // Clear refresh token cookie
   res.clearCookie(COOKIE_NAME, CLEAR_COOKIE_OPTIONS);
 
-  // Audit log: User logout
-  await AuditLogger.log(
-    AuditLogger.buildParams(req, AuditLogger.ACTIONS.USER_LOGOUT)
-  );
+  // Audit only when a user has already been attached by auth middleware.
+  if (req.user) {
+    await AuditLogger.log(
+      AuditLogger.buildParams(req, AuditLogger.ACTIONS.USER_LOGOUT)
+    );
+  }
 
   res.status(200).json({
     success: true,
