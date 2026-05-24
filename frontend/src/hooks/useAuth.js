@@ -116,8 +116,18 @@ const useAuthStore = create((set, get) => ({
     try {
       const token = localStorage.getItem('accessToken');
 
+      if (!token) {
+        // No token at all — user is not logged in, skip refresh to avoid 401
+        set({
+          user: null,
+          isAuthenticated: false,
+          isInitialized: true,
+        });
+        return;
+      }
+
       // STEP 1: Try normal session if token exists
-      if (token) {
+      try {
         const res = await authAPI.getMe();
 
         set({
@@ -127,9 +137,12 @@ const useAuthStore = create((set, get) => ({
         });
 
         return;
+      } catch (meErr) {
+        // getMe failed (likely expired token) — try refresh
+        if (meErr.response?.status !== 401) throw meErr;
       }
 
-      // STEP 2: No token → try refresh (cookie-based)
+      // STEP 2: Token expired → try refresh (cookie-based)
       const refreshRes = await authAPI.refresh();
 
       const newToken = refreshRes.data.data.accessToken;
