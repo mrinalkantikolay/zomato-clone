@@ -189,7 +189,7 @@ router.post("/refresh", authController.refresh);
  *                   type: string
  *                   example: Logged out successfully
  */
-router.post("/logout", protect, authController.logout);
+router.post("/logout", authController.logout);
 
 /**
  * @swagger
