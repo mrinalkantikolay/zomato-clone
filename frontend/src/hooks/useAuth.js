@@ -32,7 +32,6 @@ const useAuthStore = create((set, get) => ({
       const user = res.data.data.user;
       const accessToken = res.data.data.accessToken;
 
-      // Save token
       localStorage.setItem('accessToken', accessToken);
 
       set({
@@ -111,17 +110,32 @@ const useAuthStore = create((set, get) => ({
   },
 
   // ======================
-  // CHECK AUTH (REFRESH SESSION)
+  // CHECK AUTH (REFRESH SESSION FIXED)
   // ======================
   checkAuth: async () => {
     try {
       const token = localStorage.getItem('accessToken');
 
-      if (!token) {
-        set({ isInitialized: true });
+      // STEP 1: Try normal session if token exists
+      if (token) {
+        const res = await authAPI.getMe();
+
+        set({
+          user: res.data.data.user,
+          isAuthenticated: true,
+          isInitialized: true,
+        });
+
         return;
       }
 
+      // STEP 2: No token → try refresh (cookie-based)
+      const refreshRes = await authAPI.refresh();
+
+      const newToken = refreshRes.data.data.accessToken;
+      localStorage.setItem('accessToken', newToken);
+
+      // STEP 3: Fetch user again after refresh
       const res = await authAPI.getMe();
 
       set({
@@ -129,28 +143,16 @@ const useAuthStore = create((set, get) => ({
         isAuthenticated: true,
         isInitialized: true,
       });
+
     } catch (err) {
-      // Try refresh if access token expired
-      try {
-        const res = await authAPI.refresh();
+      // STEP 4: Total failure → logout state
+      localStorage.removeItem('accessToken');
 
-        const newToken = res.data.data.accessToken;
-        localStorage.setItem('accessToken', newToken);
-
-        set({
-          user: res.data.data.user,
-          isAuthenticated: true,
-          isInitialized: true,
-        });
-      } catch (refreshErr) {
-        localStorage.removeItem('accessToken');
-
-        set({
-          user: null,
-          isAuthenticated: false,
-          isInitialized: true,
-        });
-      }
+      set({
+        user: null,
+        isAuthenticated: false,
+        isInitialized: true,
+      });
     }
   },
 }));
