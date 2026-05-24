@@ -22,7 +22,7 @@ const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,                      // XSS protection — JS cannot read
   secure: true,                // HTTPS-only in production
   sameSite:  "none",  // CSRF protection (lax in dev for easier testing)
-  path: "/",               // Only sent to auth endpoints
+  path: "/api/v1/auth",               // Only sent to auth endpoints
   maxAge: 7 * 24 * 60 * 60 * 1000,    // 7 days in milliseconds
 };
 
@@ -35,7 +35,7 @@ const CLEAR_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
   sameSite:  "none",
-  path: "/",
+  path: "/api/v1/auth",
 };
 
 const COOKIE_NAME = "refreshToken";
